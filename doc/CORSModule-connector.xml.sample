@@ -1,0 +1,3 @@
+<!-- BEGIN_INCLUDE(cors:validate) -->
+    <cors:validate />
+<!-- END_INCLUDE(cors:validate) -->
