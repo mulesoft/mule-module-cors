@@ -165,6 +165,15 @@ public class CORSModule
         }
 
         Origin configuredOrigin = originsStore.retrieve(origin);
+
+        String checkMethod = isPreflight ? requestMethod : method;
+
+        //if the method is not present, then we don't allow.
+        if (configuredOrigin.getMethods() == null || !configuredOrigin.getMethods().contains(checkMethod)) {
+            return;
+        }
+
+
         //add the allow origin
         message.setOutboundProperty(Constants.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
 
