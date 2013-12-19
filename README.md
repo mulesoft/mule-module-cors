@@ -1,38 +1,40 @@
+CORS Support for Mule Apps
+==========================
 
-WELCOME
-=======
-Congratulations you have just created a new Mule Cloud Connector!
+Cross Origin Resource Sharing enables javascript clients that run on a web browser to safely consume remote API's that are not hosted in the same server where the code in execution came from. This is escencially the case not only for web applications but for embedded webapps running in mobile devices.
 
-This wizard created a number of new classes and resources useful for Mule
-modules.  Each of the created files contains documentation and TODO
-items where necessary.  Here is an overview of what was created.
+The CORS mule module makes easy for mule applications to share resources for clients of other origins.
 
-./pom.xml:
-A maven project descriptor that describes how to build this module.
+Here is an example configuration:
 
-./LICENSE.md:
-The open source license text for this project.
+```xml
 
-TESTING
-=======
+<cors:config name="Cors" doc:name="Cors">
+    <cors:origins>
+        <cors:origin url="http://localhost:8383" accessControlMaxAge="30">
+            <cors:methods>
+                <cors:method>GET</cors:method>
+            </cors:methods>
+            <cors:headers>
+                <cors:header>X-Requested-With</cors:header>
+            </cors:headers>
+        </cors:origin>
+    </cors:origins>
+</cors:config>
 
-This  project also contains test classes that can be run as part of a test
-suite.
+```
+And applied in a flow:
 
-ADDITIONAL RESOURCES
-====================
-Everything you need to know about getting started with Mule can be found here:
-http://www.mulesoft.org/documentation/display/MULE3INTRO/Home
+```xml
 
-There further useful information about extending Mule here:
-http://www.mulesoft.org/documentation/display/DEVKIT/Home
+<flow name="mule-configFlow1" doc:name="mule-configFlow1">
+    <http:inbound-endpoint exchange-pattern="request-response"
+        host="localhost" port="8081" path="resources" doc:name="HTTP" />
 
-Remember if you get stuck you can try getting help on the Mule user list:
-http://www.mulesoft.org/email-lists
+		<cors:validate config-ref="Cors" doc:name="Cors"/>
 
-Also, MuleSoft, the company behind Mule, offers 24x7 support options:
-http://www.mulesoft.com/enterprise-subscriptions-and-support
+		<flow-ref name="sysprops" doc:name="Flow Reference" />
+</flow>
+```
 
-Enjoy your Mule ride!
-
-The Mule Team
+This allows easy verification of origins and access constraints for non public resources.
