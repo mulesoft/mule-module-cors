@@ -97,7 +97,7 @@ public class CORSModule
      */
     @Processor(intercepting = true)
     @Inject
-    public MuleEvent validate(SourceCallback callback, MuleEvent event, @Optional @Default("false")
+    public MuleMessage validate(SourceCallback callback, MuleEvent event, @Optional @Default("false")
         boolean publicResource, @Optional @Default("false") boolean acceptsCredentials) throws Exception {
 
         if (publicResource && acceptsCredentials) {
@@ -114,7 +114,7 @@ public class CORSModule
         if (StringUtils.isEmpty(origin)) {
 
             if (logger.isDebugEnabled()) logger.debug("Request is not a CORS request.");
-            return callback.processEvent(event);
+            return callback.processEvent(event).getMessage();
         }
 
         //read headers including those of the preflight
@@ -137,7 +137,7 @@ public class CORSModule
         //finally configure the CORS headers
         configureCorsHeaders(event.getMessage(), method, origin, requestMethod, requestHeaders, publicResource, acceptsCredentials);
 
-        return result;
+        return result.getMessage();
     }
 
     private void configureCorsHeaders(MuleMessage message, String method, String origin, String requestMethod,
