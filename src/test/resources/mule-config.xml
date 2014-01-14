@@ -4,16 +4,19 @@
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xmlns:spring="http://www.springframework.org/schema/beans"
       xmlns:cors="http://www.mulesoft.org/schema/mule/cors"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http"
       xsi:schemaLocation="
         http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
         http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
-        http://www.mulesoft.org/schema/mule/cors http://www.mulesoft.org/schema/mule/cors/1.0-SNAPSHOT/mule-cors.xsd">
+        http://www.mulesoft.org/schema/mule/cors http://www.mulesoft.org/schema/mule/cors/1.0-SNAPSHOT/mule-cors.xsd
+        http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
 
     <cors:config>
         <cors:origins>
-            <cors:origin url="http://localhost:8081">
+            <cors:origin url="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_TEST_ORIGIN}">
                 <cors:methods>
                     <cors:method>GET</cors:method>
+                    <cors:method>PUT</cors:method>
                 </cors:methods>
                 <cors:headers>
                     <cors:header>X-Allow-Origin</cors:header>
@@ -23,8 +26,16 @@
     </cors:config>
 
     <flow name="testFlow">
+        <http:inbound-endpoint address="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_CONFIGURED_ENDPOINT_URL}" />
         <cors:validate/>
-        <set-payload value="Another string" />
+        <!-- read the expected return from the test case for convenience -->
+        <set-payload value="#{T(com.mulesoft.modules.cors.CORSModuleTest).EXPECTED_RETURN}" />
     </flow>
 
+    <flow name="publicFlow">
+        <http:inbound-endpoint address="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_PUBLIC_ENDPOINT_URL}" />
+        <cors:validate publicResource="true" />
+        <!-- read the expected return from the test case for convenience -->
+        <set-payload value="#{T(com.mulesoft.modules.cors.CORSModuleTest).EXPECTED_RETURN}" />
+    </flow>
 </mule>
