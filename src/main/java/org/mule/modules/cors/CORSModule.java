@@ -18,6 +18,7 @@ package org.mule.modules.cors;
 
 import org.apache.commons.lang.StringUtils;
 import org.mule.api.MuleEvent;
+import org.mule.api.annotations.lifecycle.Start;
 import org.mule.api.annotations.param.Default;
 import org.mule.api.annotations.param.Optional;
 import org.mule.api.store.ObjectStore;
@@ -29,7 +30,6 @@ import org.mule.api.MuleMessage;
 import org.mule.api.annotations.*;
 import org.mule.api.callback.SourceCallback;
 
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.util.List;
 
@@ -63,7 +63,7 @@ public class CORSModule
     private ObjectStore<Origin> originsStore;
 
 
-    @PostConstruct
+    @Start
     public void initializeModule() throws ObjectStoreException{
 
         //no object store configured.
