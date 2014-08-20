@@ -11,7 +11,7 @@
         http://www.mulesoft.org/schema/mule/cors http://www.mulesoft.org/schema/mule/cors/1.0-SNAPSHOT/mule-cors.xsd
         http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
 
-    <cors:config>
+    <cors:config name="defaultConfig">
         <cors:origins>
             <cors:origin url="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_TEST_ORIGIN}">
                 <cors:methods>
@@ -25,16 +25,45 @@
         </cors:origins>
     </cors:config>
 
+    <cors:config name="withDefaultOrigin" storePrefix="withDefaultConfig">
+        <cors:origins>
+            <cors:origin url="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_TEST_ORIGIN}">
+                <cors:methods>
+                    <cors:method>POST</cors:method>
+                </cors:methods>
+                <cors:headers>
+                    <cors:header>X-Allow-Origin</cors:header>
+                </cors:headers>
+            </cors:origin>
+            <cors:origin url="*"> <!-- wildcard for defining the default config to all origins not previously matched -->
+                <cors:methods>
+                    <cors:method>GET</cors:method>
+                    <cors:method>PUT</cors:method>
+                </cors:methods>
+                <cors:headers>
+                    <cors:header>X-Allow-Origin</cors:header>
+                </cors:headers>
+            </cors:origin>
+        </cors:origins>
+    </cors:config>
+
     <flow name="testFlow">
         <http:inbound-endpoint address="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_CONFIGURED_ENDPOINT_URL}" />
-        <cors:validate/>
+        <cors:validate config-ref="defaultConfig"/>
         <!-- read the expected return from the test case for convenience -->
         <set-payload value="#{T(com.mulesoft.modules.cors.CORSModuleTest).EXPECTED_RETURN}" />
     </flow>
 
     <flow name="publicFlow">
         <http:inbound-endpoint address="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_PUBLIC_ENDPOINT_URL}" />
-        <cors:validate publicResource="true" />
+        <cors:validate publicResource="true" config-ref="defaultConfig" />
+        <!-- read the expected return from the test case for convenience -->
+        <set-payload value="#{T(com.mulesoft.modules.cors.CORSModuleTest).EXPECTED_RETURN}" />
+    </flow>
+
+    <flow name="defaultConfigFlow">
+        <http:inbound-endpoint address="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_DEFAULT_ENDPOINT_URL}" />
+        <cors:validate config-ref="withDefaultOrigin"/>
         <!-- read the expected return from the test case for convenience -->
         <set-payload value="#{T(com.mulesoft.modules.cors.CORSModuleTest).EXPECTED_RETURN}" />
     </flow>

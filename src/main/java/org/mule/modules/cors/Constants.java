@@ -39,6 +39,8 @@ public class Constants {
 
     public static final String PREFLIGHT_METHOD = "OPTIONS";
 
+    public static final String DEFAULT_ORIGIN_NAME = "*";
+
     /** TODO use mule constants */
     public static final String HTTP_METHOD = "http.method";
 

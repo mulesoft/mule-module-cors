@@ -44,18 +44,27 @@ public class CORSModuleTest extends FunctionalTestCase
      * The endpoint that has a valid filter configuration
      */
     public static final String CORS_CONFIGURED_ENDPOINT_URL = "http://localhost:9081/test";
-    
+
+    /**
+     * Endpoint to test default configuration.
+     */
+    public static final String CORS_DEFAULT_ENDPOINT_URL = "http://localhost:9081/default";
+
     /**
      * An endpoint for a public resource
      */
     public static final String CORS_PUBLIC_ENDPOINT_URL = "http://localhost:9081/public";
     
-    
     /**
      * The origin we have configured on the test case
      */
     public static final String CORS_TEST_ORIGIN = "http://localhost:8081";
-    
+
+    /**
+     * One origin not configured for the test case but to test default behavior.
+     */
+    public static final String CORS_DEFAULT_ORIGIN = "http://somehost";
+
     /**
      * Mule client to send messages in each test
      */
@@ -186,5 +195,50 @@ public class CORSModuleTest extends FunctionalTestCase
         //the payload should be the expected
         assertThat(response.getPayloadAsString(), equalTo(EXPECTED_RETURN));
         
+    }
+
+    @Test
+    public void testDefaultOriginMethod() throws Exception {
+
+        //add the origin header
+        headers.put("Origin", CORS_DEFAULT_ORIGIN);
+
+        //send a request to get (no preflight)
+        MuleMessage response = client.send(CORS_DEFAULT_ENDPOINT_URL, "", headers);
+
+        assertNotNull("Response should not be null", response);
+
+        //we should have an access control allow origin
+        String allowedOrigin = response.getInboundProperty(Constants.ACCESS_CONTROL_ALLOW_ORIGIN);
+
+        assertNotNull("Allowed origin should be present", allowedOrigin);
+
+
+        //check the payload
+        //the payload should be the expected value
+        assertThat(response.getPayloadAsString(), equalTo(EXPECTED_RETURN));
+
+    }
+
+    @Test
+    public void testDefaultOriginMethodNotAllowed() throws Exception {
+
+        //send a method not allowed and verify the module is filtering the request
+        //add the origin header
+        headers.put("Origin", CORS_DEFAULT_ORIGIN);
+        headers.put("http.method", "POST");
+
+        //send a request to get (no preflight)
+        MuleMessage response = client.send(CORS_DEFAULT_ENDPOINT_URL, "", headers);
+
+        //a well behaved client should have sent a preflight
+        //but we don't want to be well behaved
+        String allowedOrigin = response.getInboundProperty(Constants.ACCESS_CONTROL_ALLOW_ORIGIN);
+
+        assertNull("Allowed origin should NOT be present", allowedOrigin);
+
+        //the payload should NOT be the expected response
+        assertThat(response.getPayloadAsString(), not(equalTo(EXPECTED_RETURN)));
+
     }
 }

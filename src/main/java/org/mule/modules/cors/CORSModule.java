@@ -17,10 +17,12 @@
 package org.mule.modules.cors;
 
 import org.apache.commons.lang.StringUtils;
+import org.mule.api.MuleContext;
 import org.mule.api.MuleEvent;
 import org.mule.api.annotations.lifecycle.Start;
 import org.mule.api.annotations.param.Default;
 import org.mule.api.annotations.param.Optional;
+import org.mule.api.context.MuleContextAware;
 import org.mule.api.store.ObjectStore;
 import org.mule.api.store.ObjectStoreException;
 import org.mule.api.store.ObjectStoreManager;
@@ -47,6 +49,17 @@ public class CORSModule
     @Inject
     private ObjectStoreManager objectStoreManager;
 
+    @Inject
+    private MuleContext muleContext;
+
+
+    /**
+     * Prefix used to differentiate the object store used as the backend of the configured origins.
+     */
+    @Configurable
+    @Optional
+    private String storePrefix = "_corsModule";
+
     /**
      * The initial list of supported origins that will be introduced into the origins object store.
      */
@@ -64,14 +77,15 @@ public class CORSModule
 
 
     @Start
-    public void initializeModule() throws ObjectStoreException{
+    public void initializeModule() throws ObjectStoreException {
 
         //no object store configured.
         if (this.originsStore == null) {
 
             if (logger.isDebugEnabled()) logger.debug("No object store configured, defaulting to " + Constants.ORIGINS_OBJECT_STORE);
 
-            this.originsStore = objectStoreManager.getObjectStore(Constants.ORIGINS_OBJECT_STORE);
+            String appName = muleContext.getConfiguration().getId();
+            this.originsStore = objectStoreManager.getObjectStore(appName + Constants.ORIGINS_OBJECT_STORE + storePrefix);
         }
 
         //setup all configured object stores.
@@ -172,12 +186,12 @@ public class CORSModule
         }
 
 
-        //if origin is not present then don't add headers
-        if (!originsStore.contains(origin)) {
+        Origin configuredOrigin = findOrigin(origin);
+
+        //no matching origin has been found.
+        if (configuredOrigin == null) {
             return;
         }
-
-        Origin configuredOrigin = originsStore.retrieve(origin);
 
         String checkMethod = isPreflight ? requestMethod : method;
 
@@ -237,14 +251,16 @@ public class CORSModule
             return true;
         }
 
-        if (!originsStore.contains(origin)) {
-            if (logger.isDebugEnabled()) logger.debug("Origin not configured: " + origin);
+        Origin configuredOrigin = findOrigin(origin);
+
+        if (configuredOrigin == null) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Could not find configuration for origin: " + origin);
+            }
             return false;
         }
 
         //verify the allowed methods.
-        Origin configuredOrigin = originsStore.retrieve(origin);
-
         if (configuredOrigin.getMethods() != null) {
             return configuredOrigin.getMethods().contains(method);
         } else {
@@ -253,6 +269,19 @@ public class CORSModule
         }
     }
 
+
+    private Origin findOrigin(String origin) throws ObjectStoreException{
+        //if origin is not present then don't add headers
+        if (!originsStore.contains(origin)) {
+            if (!originsStore.contains(Constants.DEFAULT_ORIGIN_NAME)) {
+                return null;
+            } else {
+                return originsStore.retrieve(Constants.DEFAULT_ORIGIN_NAME);
+            }
+        }
+
+        return originsStore.retrieve(origin);
+    }
 
     //GETTERS AND SETTERS
     public ObjectStore<Origin> getOriginsStore() {
@@ -277,5 +306,21 @@ public class CORSModule
 
     public void setObjectStoreManager(ObjectStoreManager objectStoreManager) {
         this.objectStoreManager = objectStoreManager;
+    }
+
+    public void setMuleContext(MuleContext muleContext) {
+        this.muleContext = muleContext;
+    }
+
+    public MuleContext getMuleContext() {
+        return muleContext;
+    }
+
+    public String getStorePrefix() {
+        return storePrefix;
+    }
+
+    public void setStorePrefix(String storePrefix) {
+        this.storePrefix = storePrefix;
     }
 }
