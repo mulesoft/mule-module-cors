@@ -20,6 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.mule.api.MuleContext;
 import org.mule.api.MuleEvent;
 import org.mule.api.annotations.lifecycle.Start;
+import org.mule.api.annotations.lifecycle.Stop;
 import org.mule.api.annotations.param.Default;
 import org.mule.api.annotations.param.Optional;
 import org.mule.api.context.MuleContextAware;
@@ -79,6 +80,8 @@ public class CORSModule
     @Start
     public void initializeModule() throws ObjectStoreException {
 
+        boolean newObjectStore = false;
+
         //no object store configured.
         if (this.originsStore == null) {
 
@@ -86,6 +89,7 @@ public class CORSModule
 
             String appName = muleContext.getConfiguration().getId();
             this.originsStore = objectStoreManager.getObjectStore(appName + Constants.ORIGINS_OBJECT_STORE + storePrefix);
+            newObjectStore = true;
         }
 
         //setup all configured object stores.
@@ -100,10 +104,25 @@ public class CORSModule
                 logger.debug("Configuring origin: " + o.getUrl());
             }
 
+            if (originsStore.contains(o.getUrl()))
+            {
+                if (newObjectStore) {
+                    originsStore.remove(o.getUrl());
+                } else {
+                    logger.warn("Object Store already contains " + o.getUrl());
+                    continue;
+                }
+            }
+
             originsStore.store(o.getUrl(), o);
 
         }
 
+    }
+
+    @Stop
+    public void doClearModule() {
+        this.originsStore = null;
     }
 
 

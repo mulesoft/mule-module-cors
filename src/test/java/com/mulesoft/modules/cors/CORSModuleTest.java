@@ -19,6 +19,8 @@ package com.mulesoft.modules.cors;
 import java.util.HashMap;
 import org.junit.Test;
 import org.mule.api.client.MuleClient;
+import org.mule.modules.cors.CORSModule;
+import org.mule.modules.cors.adapters.CORSModuleInjectionAdapter;
 import org.mule.tck.junit4.FunctionalTestCase;
 
 import static org.hamcrest.Matchers.*;
@@ -150,8 +152,8 @@ public class CORSModuleTest extends FunctionalTestCase
         assertThat(response.getPayloadAsString(), not(equalTo(EXPECTED_RETURN)));
         
     }
-    
-    
+
+
     @Test
     public void testPreflight() throws Exception {
         
@@ -240,5 +242,16 @@ public class CORSModuleTest extends FunctionalTestCase
         //the payload should NOT be the expected response
         assertThat(response.getPayloadAsString(), not(equalTo(EXPECTED_RETURN)));
 
+    }
+
+
+    @Test
+    public void testLifecycle() throws Exception{
+
+        CORSModuleInjectionAdapter module = muleContext.getRegistry().lookupObject("defaultConfig");
+
+        module.stop();
+
+        module.start();
     }
 }
