@@ -16,18 +16,25 @@
 
 package com.mulesoft.modules.cors;
 
-import java.util.HashMap;
-import org.junit.Test;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+
+import org.mule.api.MuleMessage;
 import org.mule.api.client.MuleClient;
-import org.mule.modules.cors.CORSModule;
+import org.mule.modules.cors.Constants;
 import org.mule.modules.cors.adapters.CORSModuleInjectionAdapter;
 import org.mule.tck.junit4.FunctionalTestCase;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import java.util.HashMap;
+
 import org.junit.Before;
-import org.mule.api.MuleMessage;
-import org.mule.modules.cors.Constants;
+import org.junit.Test;
 
 public class CORSModuleTest extends FunctionalTestCase
 {
@@ -57,6 +64,11 @@ public class CORSModuleTest extends FunctionalTestCase
      */
     public static final String CORS_PUBLIC_ENDPOINT_URL = "http://localhost:9081/public";
     
+    /**
+     * An endpoint to test response headers
+     */
+    public static final String CORS_HEADERS_ENDPOINT_URL = "http://localhost:9081/headers";
+
     /**
      * The origin we have configured on the test case
      */
@@ -254,4 +266,22 @@ public class CORSModuleTest extends FunctionalTestCase
 
         module.start();
     }
+
+    @Test
+    public void testResponseHeaders() throws Exception {
+
+        headers.put("http.method", "POST");
+
+        MuleMessage response = client.send(CORS_HEADERS_ENDPOINT_URL, "", headers);
+
+        assertNotNull("Response should not be null", response);
+
+        String muleMessageId = response.getInboundProperty("MULE_ROOT_MESSAGE_ID");
+        assertNull("header MULE_ROOT_MESSAGE_ID should not be present", muleMessageId);
+
+        //the payload should be the expected
+        assertThat(response.getPayloadAsString(), equalTo(EXPECTED_RETURN));
+
+    }
+
 }
