@@ -67,4 +67,12 @@
         <!-- read the expected return from the test case for convenience -->
         <set-payload value="#{T(com.mulesoft.modules.cors.CORSModuleTest).EXPECTED_RETURN}" />
     </flow>
+
+    <flow name="headersFlow">
+        <http:inbound-endpoint address="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_HEADERS_ENDPOINT_URL}" />
+        <cors:validate publicResource="true" config-ref="defaultConfig" />
+        <copy-properties propertyName="*"/>
+        <http:outbound-endpoint address="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_PUBLIC_ENDPOINT_URL}" />
+    </flow>
+
 </mule>

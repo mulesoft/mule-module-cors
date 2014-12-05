@@ -16,25 +16,28 @@
 
 package org.mule.modules.cors;
 
-import org.apache.commons.lang.StringUtils;
 import org.mule.api.MuleContext;
 import org.mule.api.MuleEvent;
+import org.mule.api.MuleMessage;
+import org.mule.api.annotations.Configurable;
+import org.mule.api.annotations.Module;
+import org.mule.api.annotations.Processor;
 import org.mule.api.annotations.lifecycle.Start;
 import org.mule.api.annotations.lifecycle.Stop;
 import org.mule.api.annotations.param.Default;
 import org.mule.api.annotations.param.Optional;
-import org.mule.api.context.MuleContextAware;
+import org.mule.api.callback.SourceCallback;
 import org.mule.api.store.ObjectStore;
 import org.mule.api.store.ObjectStoreException;
 import org.mule.api.store.ObjectStoreManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.mule.api.MuleMessage;
-import org.mule.api.annotations.*;
-import org.mule.api.callback.SourceCallback;
+
+import java.util.List;
 
 import javax.inject.Inject;
-import java.util.List;
+
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Cloud Connector
@@ -143,7 +146,7 @@ public class CORSModule
      */
     @Processor(intercepting = true)
     @Inject
-    public MuleMessage validate(SourceCallback callback, MuleEvent event, @Optional @Default("false")
+    public MuleEvent validate(SourceCallback callback, MuleEvent event, @Optional @Default("false")
         boolean publicResource, @Optional @Default("false") boolean acceptsCredentials) throws Exception {
 
         if (publicResource && acceptsCredentials) {
@@ -160,7 +163,7 @@ public class CORSModule
         if (StringUtils.isEmpty(origin)) {
 
             if (logger.isDebugEnabled()) logger.debug("Request is not a CORS request.");
-            return callback.processEvent(event).getMessage();
+            return callback.processEvent(event);
         }
 
         //read headers including those of the preflight
@@ -183,7 +186,7 @@ public class CORSModule
         //finally configure the CORS headers
         configureCorsHeaders(event.getMessage(), method, origin, requestMethod, requestHeaders, publicResource, acceptsCredentials);
 
-        return result.getMessage();
+        return result;
     }
 
     private void configureCorsHeaders(MuleMessage message, String method, String origin, String requestMethod,
