@@ -16,18 +16,31 @@
 
 package com.mulesoft.modules.cors;
 
-import org.junit.Before;
-import org.junit.Test;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.mule.module.http.api.HttpConstants.Methods.OPTIONS;
+import static org.mule.module.http.api.HttpConstants.Methods.POST;
+
+import org.mule.DefaultMuleMessage;
+import org.mule.api.MuleException;
 import org.mule.api.MuleMessage;
 import org.mule.api.client.MuleClient;
+import org.mule.module.http.api.client.HttpRequestOptions;
+import org.mule.module.http.api.client.HttpRequestOptionsBuilder;
 import org.mule.modules.cors.Constants;
 import org.mule.modules.cors.adapters.CORSModuleLifecycleInjectionAdapter;
 import org.mule.tck.junit4.FunctionalTestCase;
 
 import java.util.HashMap;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
 
 public class CORSModuleTest extends FunctionalTestCase
 {
@@ -79,7 +92,11 @@ public class CORSModuleTest extends FunctionalTestCase
     
     
     private HashMap<String, Object> headers;
-    
+
+    private HttpRequestOptions getRequest = HttpRequestOptionsBuilder.newOptions().build();
+    private HttpRequestOptions postRequest = HttpRequestOptionsBuilder.newOptions().method(POST.name()).build();
+    private HttpRequestOptions optionsRequest = HttpRequestOptionsBuilder.newOptions().method(OPTIONS.name()).build();
+
     @Before
     public void initTestClient() {
         
@@ -88,17 +105,25 @@ public class CORSModuleTest extends FunctionalTestCase
         
         //initialize the standard headers
         headers = new HashMap<String, Object>();
-        headers.put("http.method", "GET");
                 
     }
-    
-    
+
+    private MuleMessage performRequest(String url) throws MuleException {
+        return performRequest(url, getRequest);
+    }
+
+    private MuleMessage performRequest(String url, HttpRequestOptions requestOptions) throws MuleException {
+        MuleMessage request = new DefaultMuleMessage("", headers, muleContext);
+
+        //send a request to get (no preflight)
+        return client.send(url, request, requestOptions);
+    }
+
     @Test
     public void testNoOriginMethod() throws Exception {
         
-        
-        MuleMessage response = client.send(CORS_CONFIGURED_ENDPOINT_URL, "", headers);
-        
+        MuleMessage response = performRequest(CORS_CONFIGURED_ENDPOINT_URL);
+
         //the response should not be null
         assertNotNull("The response should not be null", response);
         //the response payload should not be null
@@ -118,7 +143,7 @@ public class CORSModuleTest extends FunctionalTestCase
         headers.put("Origin", CORS_TEST_ORIGIN);
         
         //send a request to get (no preflight)
-        MuleMessage response = client.send(CORS_CONFIGURED_ENDPOINT_URL, "", headers);
+        MuleMessage response = performRequest(CORS_CONFIGURED_ENDPOINT_URL);
         
         assertNotNull("Response should not be null", response);
         
@@ -141,10 +166,8 @@ public class CORSModuleTest extends FunctionalTestCase
         //send a method not allowed and verify the module is filtering the request
         //add the origin header
         headers.put("Origin", CORS_TEST_ORIGIN);
-        headers.put("http.method", "POST");
-        
-        //send a request to get (no preflight)
-        MuleMessage response = client.send(CORS_CONFIGURED_ENDPOINT_URL, "", headers);
+
+        MuleMessage response = performRequest(CORS_CONFIGURED_ENDPOINT_URL, postRequest);
         
         //a well behaved client should have sent a preflight
         //but we don't want to be well behaved
@@ -158,18 +181,16 @@ public class CORSModuleTest extends FunctionalTestCase
         
     }
 
-
     @Test
     public void testPreflight() throws Exception {
         
         //test the preflight is working
         headers.put("Origin", CORS_TEST_ORIGIN);
-        headers.put("http.method", "OPTIONS");
         //put some preflight headers
         headers.put(Constants.REQUEST_METHOD, "GET");
         
-        MuleMessage response = client.send(CORS_CONFIGURED_ENDPOINT_URL, "", headers);
-        
+        MuleMessage response = performRequest(CORS_CONFIGURED_ENDPOINT_URL, optionsRequest);
+
         assertNotNull("Response should not be null", response);
         
         String allowOrigin = response.getInboundProperty(Constants.ACCESS_CONTROL_ALLOW_ORIGIN);
@@ -185,13 +206,10 @@ public class CORSModuleTest extends FunctionalTestCase
         
         //configure any origin
         headers.put("Origin", "null");
-        
-        //some not allowed method
-        headers.put("http.method", "POST");
-        
+
         //even without preflight we should be allowed to access the resource
-        MuleMessage response = client.send(CORS_PUBLIC_ENDPOINT_URL, "", headers);
-        
+        MuleMessage response = performRequest(CORS_PUBLIC_ENDPOINT_URL, postRequest);
+
         assertNotNull("Response should not be null", response);
         
         //allow origin should be *
@@ -211,7 +229,7 @@ public class CORSModuleTest extends FunctionalTestCase
         headers.put("Origin", CORS_DEFAULT_ORIGIN);
 
         //send a request to get (no preflight)
-        MuleMessage response = client.send(CORS_DEFAULT_ENDPOINT_URL, "", headers);
+        MuleMessage response = performRequest(CORS_DEFAULT_ENDPOINT_URL);
 
         assertNotNull("Response should not be null", response);
 
@@ -233,10 +251,9 @@ public class CORSModuleTest extends FunctionalTestCase
         //send a method not allowed and verify the module is filtering the request
         //add the origin header
         headers.put("Origin", CORS_DEFAULT_ORIGIN);
-        headers.put("http.method", "POST");
 
         //send a request to get (no preflight)
-        MuleMessage response = client.send(CORS_DEFAULT_ENDPOINT_URL, "", headers);
+        MuleMessage response = performRequest(CORS_DEFAULT_ENDPOINT_URL, postRequest);
 
         //a well behaved client should have sent a preflight
         //but we don't want to be well behaved
@@ -263,9 +280,7 @@ public class CORSModuleTest extends FunctionalTestCase
     @Test
     public void testResponseHeaders() throws Exception {
 
-        headers.put("http.method", "POST");
-
-        MuleMessage response = client.send(CORS_HEADERS_ENDPOINT_URL, "", headers);
+        MuleMessage response = performRequest(CORS_HEADERS_ENDPOINT_URL, postRequest);
 
         assertNotNull("Response should not be null", response);
 
