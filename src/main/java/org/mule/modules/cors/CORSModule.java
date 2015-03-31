@@ -44,7 +44,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author MuleSoft, Inc.
  */
-@Module(name="cors", schemaVersion="1.0-SNAPSHOT")
+@Module(name="cors", schemaVersion="1.0-SNAPSHOT", friendlyName = "CORS module")
 public class CORSModule
 {
 
@@ -145,9 +145,8 @@ public class CORSModule
      * @throws Exception propagate any exception thrown by next message processors.
      */
     @Processor(intercepting = true)
-    @Inject
-    public MuleEvent validate(SourceCallback callback, MuleEvent event, @Optional @Default("false")
-        boolean publicResource, @Optional @Default("false") boolean acceptsCredentials) throws Exception {
+    public MuleEvent validate(SourceCallback callback, MuleEvent event, @Default("false")
+        boolean publicResource, @Default("false") boolean acceptsCredentials) throws Exception {
 
         if (publicResource && acceptsCredentials) {
             throw new IllegalArgumentException("Resource may not be public and accept credentials at the same time");

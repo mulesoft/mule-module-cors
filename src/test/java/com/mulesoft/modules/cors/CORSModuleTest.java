@@ -16,30 +16,23 @@
 
 package com.mulesoft.modules.cors;
 
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-
+import org.junit.Before;
+import org.junit.Test;
 import org.mule.api.MuleMessage;
 import org.mule.api.client.MuleClient;
 import org.mule.modules.cors.Constants;
-import org.mule.modules.cors.adapters.CORSModuleInjectionAdapter;
+import org.mule.modules.cors.adapters.CORSModuleLifecycleInjectionAdapter;
 import org.mule.tck.junit4.FunctionalTestCase;
 
 import java.util.HashMap;
 
-import org.junit.Before;
-import org.junit.Test;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
 
 public class CORSModuleTest extends FunctionalTestCase
 {
     @Override
-    protected String getConfigResources()
+    protected String getConfigFile()
     {
         return "mule-config.xml";
     }
@@ -260,7 +253,7 @@ public class CORSModuleTest extends FunctionalTestCase
     @Test
     public void testLifecycle() throws Exception{
 
-        CORSModuleInjectionAdapter module = muleContext.getRegistry().lookupObject("defaultConfig");
+        CORSModuleLifecycleInjectionAdapter module = muleContext.getRegistry().lookupObject("defaultConfig");
 
         module.stop();
 
