@@ -179,12 +179,12 @@ public class CORSModule
             result = callback.processEvent(result);
         } else {
             //setting the response to null.
-            event.getMessage().setPayload(null);
+            result.getMessage().setPayload(null);
         }
 
 
         //finally configure the CORS headers
-        configureCorsHeaders(event.getMessage(), method, origin, requestMethod, requestHeaders, publicResource, acceptsCredentials);
+        configureCorsHeaders(result.getMessage(), method, origin, requestMethod, requestHeaders, publicResource, acceptsCredentials);
 
         return result;
     }

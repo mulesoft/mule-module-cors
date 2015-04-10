@@ -271,6 +271,7 @@ public class CORSModuleTest extends FunctionalTestCase
     public void testResponseHeaders() throws Exception {
 
         headers.put("http.method", "POST");
+        headers.put("Origin", CORS_DEFAULT_ORIGIN);
 
         MuleMessage response = client.send(CORS_HEADERS_ENDPOINT_URL, "", headers);
 
@@ -278,6 +279,9 @@ public class CORSModuleTest extends FunctionalTestCase
 
         String muleMessageId = response.getInboundProperty("MULE_ROOT_MESSAGE_ID");
         assertNull("header MULE_ROOT_MESSAGE_ID should not be present", muleMessageId);
+
+        String allowedOrigin = response.getInboundProperty(Constants.ACCESS_CONTROL_ALLOW_ORIGIN);
+        assertNotNull("Allowed origin should be present", allowedOrigin);
 
         //the payload should be the expected
         assertThat(response.getPayloadAsString(), equalTo(EXPECTED_RETURN));
