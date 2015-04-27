@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.mule.modules</groupId>
     <artifactId>mule-module-cors</artifactId>
-    <version>1.3-SNAPSHOT</version>
+    <version>1.3-M1</version>
     <packaging>mule-module</packaging>
     <name>Mule CORS Module</name>
 
