@@ -260,11 +260,6 @@
             <url>http://repository.mulesoft.org/snapshots/</url>
             <layout>default</layout>
         </repository>
-        <repository>
-            <id>codehaus-releases</id>
-            <name>CodeHaus Releases</name>
-            <url>http://repository.codehaus.org/</url>
-        </repository>
     </repositories>
 
     <pluginRepositories>
