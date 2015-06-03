@@ -19,17 +19,22 @@ package org.mule.modules.cors;
 import org.mule.DefaultMuleEvent;
 import org.mule.NonBlockingVoidMuleEvent;
 import org.mule.OptimizedRequestContext;
+import org.mule.VoidMuleEvent;
 import org.mule.api.MessagingException;
 import org.mule.api.MuleEvent;
 import org.mule.api.MuleException;
 import org.mule.api.MuleMessage;
+import org.mule.api.config.MuleProperties;
 import org.mule.api.store.ObjectStoreException;
+import org.mule.api.transport.PropertyScope;
 import org.mule.api.transport.ReplyToHandler;
 import org.mule.processor.AbstractRequestResponseMessageProcessor;
 
 import org.apache.commons.lang.StringUtils;
 
 public class ValidateMessageProcessor extends AbstractRequestResponseMessageProcessor {
+
+    private static final String STOP_PROCESSING_FLAG = MuleProperties.PROPERTY_PREFIX + "__stopProcessing";
 
     private boolean publicResource;
     private boolean acceptsCredentials;
@@ -62,10 +67,23 @@ public class ValidateMessageProcessor extends AbstractRequestResponseMessageProc
 
         //setting the response to null.
         event.getMessage().setPayload(null);
-        //Set next message processor to null to stop further processing
-        setListener(null);
+        //Set flag to stop further processing. I need this workaround because there are some headers
+        //that might be set on the response and returning null or VoidMuleEvent won't allow it.
+        event.getMessage().setInvocationProperty(STOP_PROCESSING_FLAG, true);
 
         return event;
+    }
+
+    @Override
+    protected MuleEvent processNext(MuleEvent event) throws MuleException
+    {
+        if(event != null && !VoidMuleEvent.getInstance().equals(event)
+                && Boolean.TRUE.equals(event.getMessage().getInvocationProperty(STOP_PROCESSING_FLAG))) {
+            event.getMessage().removeProperty(STOP_PROCESSING_FLAG, PropertyScope.INVOCATION);
+            return event;
+        }
+
+        return super.processNext(event);
     }
 
     protected MuleEvent processResponse(final String origin, final String method, final String requestMethod, final String requestHeaders, MuleEvent event) throws MuleException
