@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:spring="http://www.springframework.org/schema/beans"
+      xmlns:cors="http://www.mulesoft.org/schema/mule/cors"
+      xmlns:test="http://www.mulesoft.org/schema/mule/test"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+      xsi:schemaLocation="
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+        http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+        http://www.mulesoft.org/schema/mule/test http://www.mulesoft.org/schema/mule/test/current/mule-test.xsd
+        http://www.mulesoft.org/schema/mule/cors http://www.mulesoft.org/schema/mule/cors/2.0-SNAPSHOT/mule-cors.xsd
+        http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+
+    <cors:config name="defaultConfig">
+        <cors:origins>
+            <cors:origin url="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_TEST_ORIGIN}">
+                <cors:methods>
+                    <cors:method>GET</cors:method>
+                    <cors:method>PUT</cors:method>
+                </cors:methods>
+                <cors:headers>
+                    <cors:header>X-Allow-Origin</cors:header>
+                </cors:headers>
+            </cors:origin>
+        </cors:origins>
+    </cors:config>
+
+    <configuration>
+        <expression-language>
+            <global-functions>
+                def assertPayload(){payload == org.mule.tck.junit4.AbstractMuleContextTestCase.TEST_MESSAGE}
+            </global-functions>
+        </expression-language>
+    </configuration>
+
+    <flow name="nonBlockingFlow">
+        <test:assert-intercepting responseSameThread="false" responseExpression="#[assertPayload()]"/>
+        <cors:validate publicResource="true" config-ref="defaultConfig" />
+        <test:non-blocking-processor/>
+    </flow>
+
+</mule>
