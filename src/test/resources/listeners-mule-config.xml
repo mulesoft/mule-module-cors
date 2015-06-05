@@ -51,6 +51,8 @@
         </cors:origins>
     </cors:config>
 
+    <cors:config name="emptyConfig" storePrefix="emptyConfig" />
+
     <flow name="nonBlockingTestFlow">
         <http:listener config-ref="http-listener-config" path="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_CONFIGURED_ENDPOINT_PATH}"/>
         <cors:validate config-ref="defaultConfig"/>
@@ -80,4 +82,10 @@
                 path="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_PUBLIC_ENDPOINT_PATH}"/>
     </flow>
 
+    <flow name="emptyConfigFlow">
+        <http:listener config-ref="http-listener-config" path="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_PUBLIC_EMPTY_ENDPOINT_PATH}"/>
+        <cors:validate publicResource="true" config-ref="emptyConfig" />
+        <!-- read the expected return from the test case for convenience -->
+        <set-payload value="#{T(com.mulesoft.modules.cors.CORSModuleTest).EXPECTED_RETURN}" />
+    </flow>
 </mule>

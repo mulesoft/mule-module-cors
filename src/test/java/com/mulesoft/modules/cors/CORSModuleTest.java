@@ -63,6 +63,7 @@ public class CORSModuleTest extends FunctionalTestCase {
      * The endpoint that has a valid filter configuration
      */
     public static final String CORS_CONFIGURED_ENDPOINT_URL = ENDPOINT_URI + CORS_CONFIGURED_ENDPOINT_PATH;
+
     public static final String CORS_DEFAULT_ENDPOINT_PATH = "/default";
 
 
@@ -70,18 +71,28 @@ public class CORSModuleTest extends FunctionalTestCase {
      * Endpoint to test default configuration.
      */
     public static final String CORS_DEFAULT_ENDPOINT_URL = ENDPOINT_URI + CORS_DEFAULT_ENDPOINT_PATH;
+
     public static final String CORS_PUBLIC_ENDPOINT_PATH = "/public";
 
     /**
      * An endpoint for a public resource
      */
     public static final String CORS_PUBLIC_ENDPOINT_URL = ENDPOINT_URI + CORS_PUBLIC_ENDPOINT_PATH;
+
     public static final String CORS_HEADERS_ENDPOINT_PATH = "/headers";
 
     /**
      * An endpoint to test response headers
      */
     public static final String CORS_HEADERS_ENDPOINT_URL = ENDPOINT_URI + CORS_HEADERS_ENDPOINT_PATH;
+
+    public static final String CORS_PUBLIC_EMPTY_ENDPOINT_PATH = "/publicEmpty";
+
+    /**
+     * An endpoint for a public resource
+     */
+    public static final String CORS_PUBLIC_EMPTY_ENDPOINT_URL = ENDPOINT_URI + CORS_PUBLIC_EMPTY_ENDPOINT_PATH;
+
     /**
      * The origin we have configured on the test case
      */
@@ -211,6 +222,20 @@ public class CORSModuleTest extends FunctionalTestCase {
         assertNull("header MULE_ROOT_MESSAGE_ID should not be present", response.getFirstHeader("MULE_ROOT_MESSAGE_ID"));
         assertNotNull("Allowed origin should be present", response.getFirstHeader(Constants.ACCESS_CONTROL_ALLOW_ORIGIN));
         assertThat(IOUtils.toString(response.getEntity().getContent()), equalTo(EXPECTED_RETURN));
+    }
+
+
+    @Test
+    public void testEmptyConfigPublicResource() throws Exception {
+        //this is a valid scenario but it seems it produces some exceptions.
+        final HttpResponse response = Request.Options(CORS_PUBLIC_EMPTY_ENDPOINT_URL).addHeader("Origin", CORS_TEST_ORIGIN)
+                .addHeader(Constants.REQUEST_METHOD, "GET").execute().returnResponse();
+
+        Header allowOrigin = response.getFirstHeader(Constants.ACCESS_CONTROL_ALLOW_ORIGIN);
+        Header allowMethods = response.getFirstHeader(Constants.ACCESS_CONTROL_ALLOW_METHODS);
+
+        assertNotNull(allowOrigin);
+        assertThat(allowOrigin.getValue(), equalTo("*"));
     }
 
 }

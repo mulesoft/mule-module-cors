@@ -47,6 +47,9 @@
         </cors:origins>
     </cors:config>
 
+
+    <cors:config name="emptyConfig" storePrefix="emptyConfig" />
+
     <flow name="testFlow">
         <http:inbound-endpoint address="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_CONFIGURED_ENDPOINT_URL}" />
         <cors:validate config-ref="defaultConfig"/>
@@ -74,5 +77,13 @@
         <copy-properties propertyName="*"/>
         <http:outbound-endpoint address="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_PUBLIC_ENDPOINT_URL}" />
     </flow>
+
+    <flow name="emptyConfigFlow">
+        <http:inbound-endpoint address="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_PUBLIC_EMPTY_ENDPOINT_URL}" />
+        <cors:validate publicResource="true" config-ref="emptyConfig" />
+        <!-- read the expected return from the test case for convenience -->
+        <set-payload value="#{T(com.mulesoft.modules.cors.CORSModuleTest).EXPECTED_RETURN}" />
+    </flow>
+
 
 </mule>
