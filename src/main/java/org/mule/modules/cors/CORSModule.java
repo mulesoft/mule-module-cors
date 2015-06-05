@@ -200,8 +200,14 @@ public class CORSModule
 
             //and if it is a preflight call
             if (isPreflight) {
-                message.setOutboundProperty(Constants.ACCESS_CONTROL_ALLOW_METHODS, requestMethod);
-                message.setOutboundProperty(Constants.ACCESS_CONTROL_ALLOW_HEADERS, requestHeaders);
+
+                if (requestMethod != null) {
+                    message.setOutboundProperty(Constants.ACCESS_CONTROL_ALLOW_METHODS, requestMethod);
+                }
+
+                if (requestHeaders != null) {
+                    message.setOutboundProperty(Constants.ACCESS_CONTROL_ALLOW_HEADERS, requestHeaders);
+                }
             }
             //no further processing
             return;

@@ -72,7 +72,7 @@ public class CORSModuleTest extends FunctionalTestCase
     /**
      * An endpoint for a public resource
      */
-    public static final String CORS_PUBLIC_EMPTY_ENDPOINT_URL = ENDPOINT_URI + CORS_PUBLIC_EMPTY_ENDPOINT_PATH;
+    public static final String CORS_PUBLIC_EMPTY_ENDPOINT_URL = "http://localhost:9081/publicEmpty";
 
     /**
      * The origin we have configured on the test case
@@ -120,7 +120,7 @@ public class CORSModuleTest extends FunctionalTestCase
         
         //the payload should be the expected value
         assertEquals("The response should be the expected value", EXPECTED_RETURN, payload);
-        
+
     }
     
     @Test
@@ -143,7 +143,7 @@ public class CORSModuleTest extends FunctionalTestCase
         //check the payload
         //the payload should be the expected value
         assertThat(response.getPayloadAsString(), equalTo(EXPECTED_RETURN));
-        
+
     }
     
     
@@ -162,12 +162,12 @@ public class CORSModuleTest extends FunctionalTestCase
         //but we don't want to be well behaved
         
         String allowedOrigin = response.getInboundProperty(Constants.ACCESS_CONTROL_ALLOW_ORIGIN);
-        
+
         assertNull("Allowed origin should NOT be present", allowedOrigin);
-        
+
         //the payload should NOT be the expected response
         assertThat(response.getPayloadAsString(), not(equalTo(EXPECTED_RETURN)));
-        
+
     }
 
 
@@ -181,7 +181,7 @@ public class CORSModuleTest extends FunctionalTestCase
         headers.put(Constants.REQUEST_METHOD, "GET");
         
         MuleMessage response = client.send(CORS_CONFIGURED_ENDPOINT_URL, "", headers);
-        
+
         assertNotNull("Response should not be null", response);
         
         String allowOrigin = response.getInboundProperty(Constants.ACCESS_CONTROL_ALLOW_ORIGIN);
@@ -191,7 +191,7 @@ public class CORSModuleTest extends FunctionalTestCase
         assertThat(allowOrigin, equalTo(CORS_TEST_ORIGIN));
         assertThat(allowMethods, allOf(containsString("GET"), containsString("PUT")));
     }
-    
+
     @Test
     public void testPublicResource() throws Exception {
         
@@ -200,20 +200,20 @@ public class CORSModuleTest extends FunctionalTestCase
         
         //some not allowed method
         headers.put("http.method", "POST");
-        
+
         //even without preflight we should be allowed to access the resource
         MuleMessage response = client.send(CORS_PUBLIC_ENDPOINT_URL, "", headers);
-        
+
         assertNotNull("Response should not be null", response);
         
         //allow origin should be *
         String allowOrigin = response.getInboundProperty(Constants.ACCESS_CONTROL_ALLOW_ORIGIN);
         
         assertThat(allowOrigin, equalTo("*"));
-        
+
         //the payload should be the expected
         assertThat(response.getPayloadAsString(), equalTo(EXPECTED_RETURN));
-        
+
     }
 
     @Test
@@ -297,14 +297,24 @@ public class CORSModuleTest extends FunctionalTestCase
     @Test
     public void testEmptyConfigPublicResource() throws Exception {
         //this is a valid scenario but it seems it produces some exceptions.
-        final HttpResponse response = Request.Options(CORS_PUBLIC_EMPTY_ENDPOINT_URL).addHeader("Origin", CORS_TEST_ORIGIN)
-                .addHeader(Constants.REQUEST_METHOD, "GET").execute().returnResponse();
 
-        Header allowOrigin = response.getFirstHeader(Constants.ACCESS_CONTROL_ALLOW_ORIGIN);
-        Header allowMethods = response.getFirstHeader(Constants.ACCESS_CONTROL_ALLOW_METHODS);
+        //configure any origin
+        headers.put("Origin", CORS_TEST_ORIGIN);
 
-        assertNotNull(allowOrigin);
-        assertThat(allowOrigin.getValue(), equalTo("*"));
+        //some not allowed method
+        headers.put("http.method", "OPTIONS");
+
+        headers.put(Constants.REQUEST_METHOD, "GET");
+
+        //even without preflight we should be allowed to access the resource
+        MuleMessage response = client.send(CORS_PUBLIC_EMPTY_ENDPOINT_URL, "", headers);
+
+        assertNotNull("Response should not be null", response);
+
+        //allow origin should be *
+        String allowOrigin = response.getInboundProperty(Constants.ACCESS_CONTROL_ALLOW_ORIGIN);
+
+        assertThat(allowOrigin, equalTo("*"));
     }
 
 }
