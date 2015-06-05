@@ -8,8 +8,12 @@
       xsi:schemaLocation="
         http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
         http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
-        http://www.mulesoft.org/schema/mule/cors http://www.mulesoft.org/schema/mule/cors/1.0-SNAPSHOT/mule-cors.xsd
+        http://www.mulesoft.org/schema/mule/cors http://www.mulesoft.org/schema/mule/cors/2.0-SNAPSHOT/mule-cors.xsd
         http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+
+    <http:listener-config name="http-listener-config" host="localhost"  port="9081"/>
+
+    <http:request-config name="http-request-config" host="localhost" port="9081"/>
 
     <cors:config name="defaultConfig">
         <cors:origins>
@@ -47,43 +51,41 @@
         </cors:origins>
     </cors:config>
 
-
     <cors:config name="emptyConfig" storePrefix="emptyConfig" />
 
-    <flow name="testFlow">
-        <http:inbound-endpoint address="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_CONFIGURED_ENDPOINT_URL}" />
+    <flow name="nonBlockingTestFlow">
+        <http:listener config-ref="http-listener-config" path="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_CONFIGURED_ENDPOINT_PATH}"/>
         <cors:validate config-ref="defaultConfig"/>
         <!-- read the expected return from the test case for convenience -->
         <set-payload value="#{T(com.mulesoft.modules.cors.CORSModuleTest).EXPECTED_RETURN}" />
     </flow>
 
-    <flow name="publicFlow">
-        <http:inbound-endpoint address="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_PUBLIC_ENDPOINT_URL}" />
+    <flow name="nonBlockingPublicFlow">
+        <http:listener config-ref="http-listener-config" path="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_PUBLIC_ENDPOINT_PATH}"/>
         <cors:validate publicResource="true" config-ref="defaultConfig" />
         <!-- read the expected return from the test case for convenience -->
         <set-payload value="#{T(com.mulesoft.modules.cors.CORSModuleTest).EXPECTED_RETURN}" />
     </flow>
 
-    <flow name="defaultConfigFlow">
-        <http:inbound-endpoint address="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_DEFAULT_ENDPOINT_URL}" />
+    <flow name="nonBlockingDefaultConfigFlow">
+        <http:listener config-ref="http-listener-config" path="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_DEFAULT_ENDPOINT_PATH}"/>
         <cors:validate config-ref="withDefaultOrigin"/>
         <!-- read the expected return from the test case for convenience -->
         <set-payload value="#{T(com.mulesoft.modules.cors.CORSModuleTest).EXPECTED_RETURN}" />
     </flow>
 
-    <flow name="headersFlow">
-        <http:inbound-endpoint address="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_HEADERS_ENDPOINT_URL}" />
+    <flow name="nonBlockingHeadersFlow">
+        <http:listener config-ref="http-listener-config" path="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_HEADERS_ENDPOINT_PATH}"/>
         <cors:validate publicResource="true" config-ref="defaultConfig" />
         <copy-properties propertyName="*"/>
-        <http:outbound-endpoint address="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_PUBLIC_ENDPOINT_URL}" />
+        <http:request config-ref="http-request-config" method="GET"
+                path="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_PUBLIC_ENDPOINT_PATH}"/>
     </flow>
 
     <flow name="emptyConfigFlow">
-        <http:inbound-endpoint address="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_PUBLIC_EMPTY_ENDPOINT_URL}" />
+        <http:listener config-ref="http-listener-config" path="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_PUBLIC_EMPTY_ENDPOINT_PATH}"/>
         <cors:validate publicResource="true" config-ref="emptyConfig" />
         <!-- read the expected return from the test case for convenience -->
         <set-payload value="#{T(com.mulesoft.modules.cors.CORSModuleTest).EXPECTED_RETURN}" />
     </flow>
-
-
 </mule>

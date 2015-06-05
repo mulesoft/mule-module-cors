@@ -70,6 +70,11 @@ public class CORSModuleTest extends FunctionalTestCase
     public static final String CORS_HEADERS_ENDPOINT_URL = "http://localhost:9081/headers";
 
     /**
+     * An endpoint for a public resource
+     */
+    public static final String CORS_PUBLIC_EMPTY_ENDPOINT_URL = ENDPOINT_URI + CORS_PUBLIC_EMPTY_ENDPOINT_PATH;
+
+    /**
      * The origin we have configured on the test case
      */
     public static final String CORS_TEST_ORIGIN = "http://localhost:8081";
@@ -286,6 +291,20 @@ public class CORSModuleTest extends FunctionalTestCase
         //the payload should be the expected
         assertThat(response.getPayloadAsString(), equalTo(EXPECTED_RETURN));
 
+    }
+
+
+    @Test
+    public void testEmptyConfigPublicResource() throws Exception {
+        //this is a valid scenario but it seems it produces some exceptions.
+        final HttpResponse response = Request.Options(CORS_PUBLIC_EMPTY_ENDPOINT_URL).addHeader("Origin", CORS_TEST_ORIGIN)
+                .addHeader(Constants.REQUEST_METHOD, "GET").execute().returnResponse();
+
+        Header allowOrigin = response.getFirstHeader(Constants.ACCESS_CONTROL_ALLOW_ORIGIN);
+        Header allowMethods = response.getFirstHeader(Constants.ACCESS_CONTROL_ALLOW_METHODS);
+
+        assertNotNull(allowOrigin);
+        assertThat(allowOrigin.getValue(), equalTo("*"));
     }
 
 }
