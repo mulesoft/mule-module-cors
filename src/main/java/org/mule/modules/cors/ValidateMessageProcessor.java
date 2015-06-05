@@ -102,8 +102,15 @@ public class ValidateMessageProcessor extends AbstractRequestResponseMessageProc
 
             //and if it is a preflight call
             if (isPreflight) {
-                message.setOutboundProperty(Constants.ACCESS_CONTROL_ALLOW_METHODS, requestMethod);
-                message.setOutboundProperty(Constants.ACCESS_CONTROL_ALLOW_HEADERS, requestHeaders);
+                //protect ourselves against 'non-standard' requests
+                if (requestMethod != null) {
+                    message.setOutboundProperty(Constants.ACCESS_CONTROL_ALLOW_METHODS, requestMethod);
+                }
+
+                //protect ourselves against 'non-standard' requests
+                if (requestHeaders != null) {
+                    message.setOutboundProperty(Constants.ACCESS_CONTROL_ALLOW_HEADERS, requestHeaders);
+                }
             }
             //no further processing
             return event;
