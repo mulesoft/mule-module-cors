@@ -110,7 +110,7 @@ public class CORSModuleTest extends FunctionalTestCase {
 
     @Parameterized.Parameters
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][] {{"mule-config.xml", false},
+        return Arrays.asList(new Object[][] {
                 {"listeners-mule-config.xml", true},
                 {"listeners-mule-config.xml", false}});
     }

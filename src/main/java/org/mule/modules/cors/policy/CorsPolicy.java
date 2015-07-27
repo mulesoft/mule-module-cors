@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package org.mule.modules.cors.config;
+package org.mule.modules.cors.policy;
 
-import org.mule.config.spring.handlers.AbstractMuleNamespaceHandler;
-import org.mule.config.spring.parsers.generic.ChildDefinitionParser;
-import org.mule.modules.cors.processors.ValidateMessageProcessor;
+import org.mule.api.MuleEvent;
+import org.mule.api.config.MuleProperties;
 
-public class CorsNamespaceHandler extends AbstractMuleNamespaceHandler {
+public interface CorsPolicy
+{
+    String CORS_STOP_PROCESSING_FLAG = MuleProperties.PROPERTY_PREFIX + "__corsStopProcessing";
 
-    @Override
-    public void init() {
-        registerBeanDefinitionParser("config", new ConfigDefinitionParser());
-        registerBeanDefinitionParser("validate", new ChildDefinitionParser("messageProcessor", ValidateMessageProcessor.class));
-    }
+    MuleEvent validate(MuleEvent muleEvent);
+
+    MuleEvent addHeaders(MuleEvent muleEvent, final String origin, final String method, final String requestMethod, final String requestHeaders);
+
 }

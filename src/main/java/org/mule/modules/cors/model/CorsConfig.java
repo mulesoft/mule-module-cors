@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.mule.modules.cors;
+package org.mule.modules.cors.model;
 
 import org.mule.api.MuleContext;
 import org.mule.api.MuleException;
@@ -24,15 +24,47 @@ import org.mule.api.lifecycle.InitialisationException;
 import org.mule.api.lifecycle.Stoppable;
 import org.mule.api.store.ObjectStore;
 import org.mule.api.store.ObjectStoreException;
+import org.mule.modules.cors.Constants;
 
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 public class CorsConfig implements Initialisable, Stoppable, MuleContextAware
 {
+    protected transient Log logger = LogFactory.getLog(getClass());
+
     private String storePrefix;
     private List<Origin> origins;
     private ObjectStore<Origin> originsStore;
     private MuleContext muleContext;
+
+    public Origin findOrigin(String origin)
+    {
+        try
+        {
+            //if origin is not present then don't add headers
+            if (!getOriginsStore().contains(origin))
+            {
+                if (!getOriginsStore().contains(Constants.DEFAULT_ORIGIN_NAME))
+                {
+                    return null;
+                }
+                else
+                {
+                    return getOriginsStore().retrieve(Constants.DEFAULT_ORIGIN_NAME);
+                }
+            }
+
+            return getOriginsStore().retrieve(origin);
+        }
+        catch(ObjectStoreException ose)
+        {
+            logger.warn("Error searching origin " + origin + " in object store. Error: " + ose.getMessage());
+            return null;
+        }
+    }
 
     @Override
     public void initialise() throws InitialisationException
