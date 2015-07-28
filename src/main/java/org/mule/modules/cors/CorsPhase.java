@@ -27,6 +27,7 @@ import org.mule.api.lifecycle.Startable;
 import org.mule.api.lifecycle.Stoppable;
 import org.mule.api.source.MessageSource;
 import org.mule.config.i18n.CoreMessages;
+import org.mule.execution.FlowProcessingPhase;
 import org.mule.execution.MessageProcessContext;
 import org.mule.execution.MessageProcessPhase;
 import org.mule.execution.MessageProcessTemplate;
@@ -150,6 +151,7 @@ public class CorsPhase implements MuleContextAware, MessageProcessPhase<HttpMess
     }
 
 
+    // This phase has to be executed after the ValidationPhase and before any other phase.
     @Override
     public int compareTo(MessageProcessPhase messageProcessPhase)
     {
@@ -157,12 +159,7 @@ public class CorsPhase implements MuleContextAware, MessageProcessPhase<HttpMess
         {
             return 1;
         }
-        // CORS validations need to be executed before Throttling
-        if (messageProcessPhase.getClass().getName().equals("com.mulesoft.mule.throttling.ThrottlingPhase"))
-        {
-            return -1;
-        }
-        return 0;
+        return -1;
     }
 
     @Override

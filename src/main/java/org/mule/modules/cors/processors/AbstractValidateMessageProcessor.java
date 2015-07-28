@@ -25,7 +25,6 @@ import org.mule.api.lifecycle.InitialisationException;
 import org.mule.api.lifecycle.Lifecycle;
 import org.mule.api.lifecycle.Startable;
 import org.mule.api.lifecycle.Stoppable;
-import org.mule.api.registry.RegistrationException;
 import org.mule.modules.cors.lookup.CorsPolicyLookup;
 import org.mule.modules.cors.lookup.FlowBasedPolicyLookup;
 import org.mule.modules.cors.manager.CorsManager;

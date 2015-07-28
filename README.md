@@ -28,9 +28,7 @@ And applied in a flow:
 ```xml
 
 <flow name="mule-configFlow1" doc:name="mule-configFlow1">
-    <http:inbound-endpoint exchange-pattern="request-response"
-        host="localhost" port="8081" path="resources" doc:name="HTTP" />
-
+    <http:listener config-ref="httpListenerConfig" path="resources"/>
 		<cors:validate config-ref="Cors" doc:name="Cors"/>
 
 		<flow-ref name="sysprops" doc:name="Flow Reference" />
@@ -38,3 +36,7 @@ And applied in a flow:
 ```
 
 This allows easy verification of origins and access constraints for non public resources.
+
+Important
+
+Since version 3.0 endpoints are no longer supported by the module.
