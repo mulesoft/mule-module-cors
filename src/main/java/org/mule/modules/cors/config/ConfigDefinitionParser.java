@@ -16,8 +16,8 @@
 
 package org.mule.modules.cors.config;
 
-import org.mule.modules.cors.CorsConfig;
-import org.mule.modules.cors.Origin;
+import org.mule.modules.cors.model.CorsConfig;
+import org.mule.modules.cors.model.Origin;
 
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.RuntimeBeanReference;

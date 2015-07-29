@@ -15,6 +15,8 @@
  */
 package org.mule.modules.cors;
 
+import org.mule.api.config.MuleProperties;
+
 public class Constants {
 
     public static final String ORIGINS_OBJECT_STORE = "CORSOriginsStore";
@@ -43,5 +45,7 @@ public class Constants {
 
     /** TODO use mule constants */
     public static final String HTTP_METHOD = "http.method";
+
+    public static final String CORS_STOP_PROCESSING_FLAG = MuleProperties.PROPERTY_PREFIX + "__corsStopProcessing";
 
 }

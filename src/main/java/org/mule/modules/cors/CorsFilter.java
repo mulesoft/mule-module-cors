@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package org.mule.modules.cors.config;
+package org.mule.modules.cors;
 
-import org.mule.config.spring.handlers.AbstractMuleNamespaceHandler;
-import org.mule.config.spring.parsers.generic.ChildDefinitionParser;
-import org.mule.modules.cors.processors.ValidateMessageProcessor;
+import org.mule.api.MuleEvent;
 
-public class CorsNamespaceHandler extends AbstractMuleNamespaceHandler {
+public interface CorsFilter
+{
+    MuleEvent filter(MuleEvent muleEvent);
 
-    @Override
-    public void init() {
-        registerBeanDefinitionParser("config", new ConfigDefinitionParser());
-        registerBeanDefinitionParser("validate", new ChildDefinitionParser("messageProcessor", ValidateMessageProcessor.class));
-    }
+    void addHeaders(MuleEvent muleEvent);
+
+    void addHeaders(MuleEvent muleEvent, final String origin, final String method, final String requestMethod, final String requestHeaders);
+
 }
