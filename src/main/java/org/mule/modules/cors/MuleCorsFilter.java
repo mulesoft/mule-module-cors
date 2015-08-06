@@ -18,6 +18,8 @@ package org.mule.modules.cors;
 
 import org.mule.api.MuleEvent;
 import org.mule.api.MuleMessage;
+import org.mule.module.http.api.HttpConstants;
+import org.mule.module.http.api.HttpHeaders;
 import org.mule.modules.cors.model.CorsConfig;
 import org.mule.modules.cors.model.Origin;
 
@@ -43,31 +45,18 @@ public class MuleCorsFilter implements CorsFilter
     @Override
     public MuleEvent filter(MuleEvent event)
     {
-        //read the origin
-        String origin = event.getMessage().getInboundProperty(Constants.ORIGIN);
-
-        //if origin is not present, then not a CORS request
+        String origin = event.getMessage().getInboundProperty(HttpHeaders.Names.ORIGIN);
         if (StringUtils.isEmpty(origin))
         {
-            if (logger.isDebugEnabled())
-            {
-                logger.debug("Request is not a CORS request.");
-            }
+            logger.debug("Request is not a CORS request.");
             return event;
         }
-
-        //read headers including those of the preflight
-        String method = event.getMessage().getInboundProperty(Constants.HTTP_METHOD);
-
-        //decide if we want to invoke the flow.
+        String method = event.getMessage().getInboundProperty(HttpConstants.RequestProperties.HTTP_METHOD_PROPERTY);
         if (shouldInvokeFlow(origin, method, publicResource))
         {
             return event;
         }
-
-        //setting the response to null.
         event.getMessage().setPayload(null);
-        //Set flag to stop further processing.
         event.getMessage().setInvocationProperty(Constants.CORS_STOP_PROCESSING_FLAG, true);
         return event;
     }
@@ -75,10 +64,10 @@ public class MuleCorsFilter implements CorsFilter
     @Override
     public void addHeaders(MuleEvent event)
     {
-        final String origin = event.getMessage().getInboundProperty(Constants.ORIGIN);
-        final String method = event.getMessage().getInboundProperty(Constants.HTTP_METHOD);
-        final String requestMethod = event.getMessage().getInboundProperty(Constants.REQUEST_METHOD);
-        final String requestHeaders = event.getMessage().getInboundProperty(Constants.REQUEST_HEADERS);
+        final String origin = event.getMessage().getInboundProperty(HttpHeaders.Names.ORIGIN);
+        final String method = event.getMessage().getInboundProperty(HttpConstants.RequestProperties.HTTP_METHOD_PROPERTY);
+        final String requestMethod = event.getMessage().getInboundProperty(HttpHeaders.Names.ACCESS_CONTROL_REQUEST_METHOD);
+        final String requestHeaders = event.getMessage().getInboundProperty(HttpHeaders.Names.ACCESS_CONTROL_REQUEST_HEADERS);
 
         addHeaders(event, origin, method, requestMethod, requestHeaders);
     }
@@ -86,8 +75,7 @@ public class MuleCorsFilter implements CorsFilter
     @Override
     public void addHeaders(MuleEvent event, String origin, String method, String requestMethod, String requestHeaders)
     {
-        MuleMessage message = event.getMessage();
-
+        final MuleMessage message = event.getMessage();
         if(StringUtils.isEmpty(origin))
         {
             return;
@@ -95,98 +83,129 @@ public class MuleCorsFilter implements CorsFilter
 
         boolean isPreflight = StringUtils.equals(Constants.PREFLIGHT_METHOD, method);
 
-        //if the resource is public then we don't check
         if (publicResource)
         {
-            message.setOutboundProperty(Constants.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
-
-            //and if it is a preflight call
-            if (isPreflight)
-            {
-                //protect ourselves against 'non-standard' requests
-                if (requestMethod != null)
-                {
-                    message.setOutboundProperty(Constants.ACCESS_CONTROL_ALLOW_METHODS, requestMethod);
-                }
-
-                //protect ourselves against 'non-standard' requests
-                if (requestHeaders != null)
-                {
-                    message.setOutboundProperty(Constants.ACCESS_CONTROL_ALLOW_HEADERS, requestHeaders);
-                }
-            }
-            //no further processing
-            return;
+            handlePublicResource(message, isPreflight, requestMethod, requestHeaders);
         }
+
         Origin configuredOrigin = config.findOrigin(origin);
 
-        //no matching origin has been found.
         if (configuredOrigin == null)
         {
             return;
         }
 
-        String checkMethod = isPreflight ? requestMethod : method;
+        if(isPreflight)
+        {
+            handlePreflightRequest(event.getMessage(), configuredOrigin, requestMethod, requestHeaders);
+        }
+        else
+        {
+            handleActualRequest(event.getMessage(), configuredOrigin, method);
+        }
+    }
 
-        //if the method is not present, then we don't allow.
-        if (configuredOrigin.getMethods() == null || !configuredOrigin.getMethods().contains(checkMethod))
+    private void handlePublicResource(final MuleMessage message, final boolean isPreflight, final String requestMethod, final String requestHeaders)
+    {
+        message.setOutboundProperty(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+        if (isPreflight)
+        {
+            if (requestMethod != null)
+            {
+                message.setOutboundProperty(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_METHODS, requestMethod);
+            }
+            if (requestHeaders != null)
+            {
+                message.setOutboundProperty(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_HEADERS, requestHeaders);
+            }
+        }
+        return;
+    }
+
+    private void handlePreflightRequest(final MuleMessage message, final Origin origin, final String method, final String requestHeaders)
+    {
+        if(!isSupportedMethod(origin, method)
+           || !isSupportedRequestHeaders(origin, requestHeaders))
         {
             return;
         }
 
-        //add the allow origin
-        message.setOutboundProperty(Constants.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+        message.setOutboundProperty(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN, origin.getUrl());
+        setAllowCredentials(message);
 
-        //if the resource accepts credentials
+        if (!origin.getMethods().isEmpty())
+        {
+            message.setOutboundProperty(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_METHODS, StringUtils.join(origin.getMethods(), ", "));
+        }
+        if (!origin.getHeaders().isEmpty())
+        {
+            message.setOutboundProperty(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_HEADERS, StringUtils.join(origin.getHeaders(), ", "));
+        }
+        if (!origin.getExposeHeaders().isEmpty())
+        {
+            message.setOutboundProperty(HttpHeaders.Names.ACCESS_CONTROL_EXPOSE_HEADERS, StringUtils.join(origin.getExposeHeaders(), ", "));
+        }
+        if (origin.getAccessControlMaxAge() != null)
+        {
+            message.setOutboundProperty(HttpHeaders.Names.ACCESS_CONTROL_MAX_AGE, origin.getAccessControlMaxAge());
+        }
+    }
+
+    private void handleActualRequest(final MuleMessage message, final Origin origin, final String method)
+    {
+        if (!isSupportedMethod(origin, method))
+        {
+            return;
+        }
+
+        message.setOutboundProperty(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN, origin.getUrl());
+        setAllowCredentials(message);
+    }
+
+    private boolean isSupportedMethod(final Origin origin, final String method)
+    {
+        if(!origin.getMethods().contains(method))
+        {
+            logger.debug("Unsupported HTTP method: " + method);
+            return false;
+        }
+        return true;
+    }
+
+    private boolean isSupportedRequestHeaders(final Origin origin, final String requestHeaders)
+    {
+        final String[] headers = parseMultipleHeaderValues(requestHeaders);
+        for(String header : headers)
+        {
+            for(String supportedHeader : origin.getHeaders())
+            {
+                if(!supportedHeader.equalsIgnoreCase(header))
+                {
+                    logger.debug("Unsupported HTTP request header: " + header);
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private void setAllowCredentials(final MuleMessage message)
+    {
         if (acceptsCredentials)
         {
-            message.setOutboundProperty(Constants.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+            message.setOutboundProperty(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
         }
-
-        //if this is not a preflight, then we don't want to add the other headers
-        if (!isPreflight)
-        {
-            return;
-        }
-
-        //serialize the list of allowed methods
-        if (configuredOrigin.getMethods() != null)
-        {
-            message.setOutboundProperty(Constants.ACCESS_CONTROL_ALLOW_METHODS, StringUtils.join(configuredOrigin.getMethods(), ", "));
-        }
-
-        //serialize the list of allowed headers
-        if (configuredOrigin.getHeaders() != null)
-        {
-            message.setOutboundProperty(Constants.ACCESS_CONTROL_ALLOW_HEADERS, StringUtils.join(configuredOrigin.getHeaders(), ", "));
-        }
-
-        //serialize the list of allowed headers
-        if (configuredOrigin.getExposeHeaders() != null)
-        {
-            message.setOutboundProperty(Constants.ACCESS_CONTROL_EXPOSE_HEADERS, StringUtils.join(configuredOrigin.getExposeHeaders(), ", "));
-        }
-
-        //set the configured max age for this origin
-        if (configuredOrigin.getAccessControlMaxAge() != null)
-        {
-            message.setOutboundProperty(Constants.ACCESS_CONTROL_MAX_AGE, configuredOrigin.getAccessControlMaxAge());
-        }
-
-        return;
     }
 
     private boolean shouldInvokeFlow(String origin, String method, boolean publicResource)
     {
-
-        //if it is the preflight request, then logic wont be invoked.
         if (StringUtils.equals(Constants.PREFLIGHT_METHOD, method))
         {
-            if (logger.isDebugEnabled()) logger.debug("OPTIONS header, will not continue processing.");
+            logger.debug("OPTIONS header, will not continue processing.");
             return false;
         }
 
-        //if it is a public resource and not preflight, then let's do it :)
         if (publicResource)
         {
             return true;
@@ -203,8 +222,7 @@ public class MuleCorsFilter implements CorsFilter
             return false;
         }
 
-        //verify the allowed methods.
-        if (configuredOrigin.getMethods() != null)
+        if (!configuredOrigin.getMethods().isEmpty())
         {
             return configuredOrigin.getMethods().contains(method);
         }
@@ -213,5 +231,27 @@ public class MuleCorsFilter implements CorsFilter
             logger.warn("Configured origin has no methods. Not allowing the execution of the flow");
             return false;
         }
+    }
+
+    /**
+     * Parses a header value consisting of zero or more space, comma or
+     * space+comma separated strings. The input string is trimmed before
+     * splitting.
+     */
+    private String[] parseMultipleHeaderValues(final String headerValue)
+    {
+        if(StringUtils.isEmpty(headerValue))
+        {
+            return new String[0];
+        }
+
+        String trimmedHeaderValue = headerValue.trim();
+
+        if(StringUtils.isEmpty(trimmedHeaderValue))
+        {
+            return new String[0];
+        }
+
+        return trimmedHeaderValue.split("\\s*,\\s*|\\s+");
     }
 }

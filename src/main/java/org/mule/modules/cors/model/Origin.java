@@ -16,17 +16,18 @@
 package org.mule.modules.cors.model;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Origin implements Serializable {
 
     private String url;
 
-    private List<String> methods;
+    private List<String> methods = new ArrayList<String>();
 
-    private List<String> headers;
+    private List<String> headers = new ArrayList<String>();
 
-    private List<String> exposeHeaders;
+    private List<String> exposeHeaders = new ArrayList<String>();
 
     private Long accessControlMaxAge;
 

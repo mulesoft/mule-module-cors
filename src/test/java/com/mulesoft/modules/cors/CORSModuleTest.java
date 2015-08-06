@@ -26,7 +26,7 @@ import static org.junit.Assert.assertThat;
 
 import org.mule.api.config.MuleProperties;
 import org.mule.config.spring.util.ProcessingStrategyUtils;
-import org.mule.modules.cors.Constants;
+import org.mule.module.http.api.HttpHeaders;
 import org.mule.tck.junit4.FunctionalTestCase;
 import org.mule.tck.junit4.rule.SystemProperty;
 
@@ -139,7 +139,7 @@ public class CORSModuleTest extends FunctionalTestCase {
     public void testConfiguredOriginMethod() throws Exception {
         final HttpResponse response = Request.Get(CORS_CONFIGURED_ENDPOINT_URL).addHeader("Origin", CORS_TEST_ORIGIN).execute().returnResponse();
         assertNotNull("Response should not be null", response);
-        assertNotNull("Allowed origin should be present", response.getFirstHeader(Constants.ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertNotNull("Allowed origin should be present", response.getFirstHeader(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN));
         assertThat(IOUtils.toString(response.getEntity().getContent()), equalTo(EXPECTED_RETURN));
     }
 
@@ -148,7 +148,7 @@ public class CORSModuleTest extends FunctionalTestCase {
         final HttpResponse response = Request.Post(CORS_CONFIGURED_ENDPOINT_URL).addHeader("Origin", CORS_TEST_ORIGIN).execute().returnResponse();
         //a well behaved client should have sent a preflight
         //but we don't want to be well behaved
-        assertNull("Allowed origin should NOT be present", response.getFirstHeader(Constants.ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertNull("Allowed origin should NOT be present", response.getFirstHeader(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN));
         //the payload should NOT be the expected response
         assertThat(IOUtils.toString(response.getEntity().getContent()), not(equalTo(EXPECTED_RETURN)));
     }
@@ -156,12 +156,14 @@ public class CORSModuleTest extends FunctionalTestCase {
     @Test
     public void testPreflight() throws Exception {
         //test the preflight is working
-        //put some preflight headers
-        final HttpResponse response = Request.Options(CORS_CONFIGURED_ENDPOINT_URL).addHeader("Origin", CORS_TEST_ORIGIN)
-                .addHeader(Constants.REQUEST_METHOD, "GET").execute().returnResponse();
+        final HttpResponse response = Request.Options(CORS_CONFIGURED_ENDPOINT_URL)
+                .addHeader("Origin", CORS_TEST_ORIGIN)
+                .addHeader(HttpHeaders.Names.ACCESS_CONTROL_REQUEST_METHOD, "GET")
+                .addHeader(HttpHeaders.Names.ACCESS_CONTROL_REQUEST_HEADERS, "X-Allow-Origin")
+                .execute().returnResponse();
 
-        Header allowOrigin = response.getFirstHeader(Constants.ACCESS_CONTROL_ALLOW_ORIGIN);
-        Header allowMethods = response.getFirstHeader(Constants.ACCESS_CONTROL_ALLOW_METHODS);
+        Header allowOrigin = response.getFirstHeader(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN);
+        Header allowMethods = response.getFirstHeader(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_METHODS);
 
         assertNotNull(allowOrigin);
         assertNotNull(allowMethods);
@@ -180,7 +182,7 @@ public class CORSModuleTest extends FunctionalTestCase {
         assertNotNull("Response should not be null", response);
 
         //allow origin should be *
-        Header allowOrigin = response.getFirstHeader(Constants.ACCESS_CONTROL_ALLOW_ORIGIN);
+        Header allowOrigin = response.getFirstHeader(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN);
 
         assertNotNull(allowOrigin);
         assertThat(allowOrigin.getValue(), equalTo("*"));
@@ -196,7 +198,7 @@ public class CORSModuleTest extends FunctionalTestCase {
         assertNotNull("Response should not be null", response);
 
         //we should have an access control allow origin
-        assertNotNull("Allowed origin should be present", response.getFirstHeader(Constants.ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertNotNull("Allowed origin should be present", response.getFirstHeader(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN));
         assertThat(IOUtils.toString(response.getEntity().getContent()), equalTo(EXPECTED_RETURN));
 
     }
@@ -209,7 +211,7 @@ public class CORSModuleTest extends FunctionalTestCase {
 
         //a well behaved client should have sent a preflight
         //but we don't want to be well behaved
-        assertNull("Allowed origin should NOT be present", response.getFirstHeader(Constants.ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertNull("Allowed origin should NOT be present", response.getFirstHeader(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN));
 
         //the payload should NOT be the expected response
         assertThat(IOUtils.toString(response.getEntity().getContent()), not(equalTo(EXPECTED_RETURN)));
@@ -220,7 +222,7 @@ public class CORSModuleTest extends FunctionalTestCase {
     public void testResponseHeaders() throws Exception {
         final HttpResponse response = Request.Post(CORS_HEADERS_ENDPOINT_URL).addHeader("Origin", CORS_DEFAULT_ORIGIN).execute().returnResponse();
         assertNull("header MULE_ROOT_MESSAGE_ID should not be present", response.getFirstHeader("MULE_ROOT_MESSAGE_ID"));
-        assertNotNull("Allowed origin should be present", response.getFirstHeader(Constants.ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertNotNull("Allowed origin should be present", response.getFirstHeader(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN));
         assertThat(IOUtils.toString(response.getEntity().getContent()), equalTo(EXPECTED_RETURN));
     }
 
@@ -229,13 +231,24 @@ public class CORSModuleTest extends FunctionalTestCase {
     public void testEmptyConfigPublicResource() throws Exception {
         //this is a valid scenario but it seems it produces some exceptions.
         final HttpResponse response = Request.Options(CORS_PUBLIC_EMPTY_ENDPOINT_URL).addHeader("Origin", CORS_TEST_ORIGIN)
-                .addHeader(Constants.REQUEST_METHOD, "GET").execute().returnResponse();
+                .addHeader(HttpHeaders.Names.ACCESS_CONTROL_REQUEST_METHOD, "GET").execute().returnResponse();
 
-        Header allowOrigin = response.getFirstHeader(Constants.ACCESS_CONTROL_ALLOW_ORIGIN);
-        Header allowMethods = response.getFirstHeader(Constants.ACCESS_CONTROL_ALLOW_METHODS);
+        Header allowOrigin = response.getFirstHeader(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN);
+        Header allowMethods = response.getFirstHeader(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_METHODS);
 
         assertNotNull(allowOrigin);
         assertThat(allowOrigin.getValue(), equalTo("*"));
+    }
+
+    @Test
+    public void testInvalidPreflightAuthorRequestHeaders() throws Exception {
+        final HttpResponse response = Request.Options(CORS_CONFIGURED_ENDPOINT_URL)
+                .addHeader("Origin", CORS_TEST_ORIGIN)
+                .addHeader(HttpHeaders.Names.ACCESS_CONTROL_REQUEST_METHOD, "GET")
+                .addHeader(HttpHeaders.Names.ACCESS_CONTROL_REQUEST_HEADERS, "X-Allow-Origin, X-Invalid-Header")
+                .execute().returnResponse();
+
+        assertNull(response.getFirstHeader(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN));
     }
 
 }

@@ -27,6 +27,8 @@ import org.mule.api.MuleMessage;
 import org.mule.api.lifecycle.Initialisable;
 import org.mule.api.lifecycle.InitialisationException;
 import org.mule.api.transport.ReplyToHandler;
+import org.mule.module.http.api.HttpConstants;
+import org.mule.module.http.api.HttpHeaders;
 import org.mule.modules.cors.Constants;
 import org.mule.modules.cors.CorsFilter;
 import org.mule.modules.cors.MuleCorsFilter;
@@ -67,10 +69,10 @@ public class ValidateMessageProcessor extends AbstractRequestResponseMessageProc
     protected MuleEvent processBlocking(MuleEvent event) throws MuleException {
         MessagingException exception = null;
 
-        final String origin = event.getMessage().getInboundProperty(Constants.ORIGIN);
-        final String method = event.getMessage().getInboundProperty(Constants.HTTP_METHOD);
-        final String requestMethod = event.getMessage().getInboundProperty(Constants.REQUEST_METHOD);
-        final String requestHeaders = event.getMessage().getInboundProperty(Constants.REQUEST_HEADERS);
+        final String origin = event.getMessage().getInboundProperty(HttpHeaders.Names.ORIGIN);
+        final String method = event.getMessage().getInboundProperty(HttpConstants.RequestProperties.HTTP_METHOD_PROPERTY);
+        final String requestMethod = event.getMessage().getInboundProperty(HttpHeaders.Names.ACCESS_CONTROL_REQUEST_METHOD);
+        final String requestHeaders = event.getMessage().getInboundProperty(HttpHeaders.Names.ACCESS_CONTROL_REQUEST_HEADERS);
 
         try {
             return processResponse(origin, method, requestMethod, requestHeaders, processNext(processRequest(event)));
@@ -84,10 +86,10 @@ public class ValidateMessageProcessor extends AbstractRequestResponseMessageProc
 
     protected MuleEvent processNonBlocking(MuleEvent event) throws MuleException {
 
-        final String origin = event.getMessage().getInboundProperty(Constants.ORIGIN);
-        final String method = event.getMessage().getInboundProperty(Constants.HTTP_METHOD);
-        final String requestMethod = event.getMessage().getInboundProperty(Constants.REQUEST_METHOD);
-        final String requestHeaders = event.getMessage().getInboundProperty(Constants.REQUEST_HEADERS);
+        final String origin = event.getMessage().getInboundProperty(HttpHeaders.Names.ORIGIN);
+        final String method = event.getMessage().getInboundProperty(HttpConstants.RequestProperties.HTTP_METHOD_PROPERTY);
+        final String requestMethod = event.getMessage().getInboundProperty(HttpHeaders.Names.ACCESS_CONTROL_REQUEST_METHOD);
+        final String requestHeaders = event.getMessage().getInboundProperty(HttpHeaders.Names.ACCESS_CONTROL_REQUEST_HEADERS);
 
         final ReplyToHandler corsReplyToHandler = new CorsReplyToHandler(event.getReplyToHandler(), origin, method,
                                                                          requestMethod, requestHeaders);
