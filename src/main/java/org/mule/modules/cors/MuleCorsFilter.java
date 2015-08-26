@@ -88,7 +88,11 @@ public class MuleCorsFilter implements CorsFilter
             handlePublicResource(message, isPreflight, requestMethod, requestHeaders);
         }
 
-        Origin configuredOrigin = config.findOrigin(origin);
+        Origin configuredOrigin = null;
+        if (config != null)
+        {
+            configuredOrigin = config.findOrigin(origin);
+        }
 
         if (configuredOrigin == null)
         {
