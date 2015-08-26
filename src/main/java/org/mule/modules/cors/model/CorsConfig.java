@@ -118,6 +118,7 @@ public class CorsConfig implements Initialisable, Stoppable, MuleContextAware
 
     @Override
     public void stop() throws MuleException {
+        muleContext.getObjectStoreManager().disposeStore(this.originsStore);
         this.originsStore = null;
     }
 
