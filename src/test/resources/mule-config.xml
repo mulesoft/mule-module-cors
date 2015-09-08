@@ -2,11 +2,11 @@
 
 <mule xmlns="http://www.mulesoft.org/schema/mule/core"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xmlns:spring="http://www.springframework.org/schema/beans"
+      xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting"
       xmlns:cors="http://www.mulesoft.org/schema/mule/cors"
       xmlns:http="http://www.mulesoft.org/schema/mule/http"
       xsi:schemaLocation="
-        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+        http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
         http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
         http://www.mulesoft.org/schema/mule/cors http://www.mulesoft.org/schema/mule/cors/2.0-SNAPSHOT/mule-cors.xsd
         http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
@@ -85,5 +85,13 @@
         <set-payload value="#{T(com.mulesoft.modules.cors.CORSModuleTest).EXPECTED_RETURN}" />
     </flow>
 
-
+    <flow name="exceptionConfigFlow">
+        <http:inbound-endpoint address="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_EXCEPTION_ENDPOINT_URL}" />
+        <cors:validate config-ref="withDefaultOrigin"/>
+        <!-- throw Exception -->
+        <scripting:component>
+            <scripting:script engine="Groovy"><![CDATA[
+                throw new IllegalArgumentException('bad arg')]]></scripting:script>
+        </scripting:component>
+    </flow>
 </mule>
