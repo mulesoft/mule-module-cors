@@ -1,2 +1,3 @@
-http\://www.mulesoft.org/schema/mule/cors/2.0-SNAPSHOT/mule-cors.xsd=META-INF/mule-cors.xsd
+http\://www.mulesoft.org/schema/mule/cors/2.0/mule-cors.xsd=META-INF/mule-cors.xsd
+http\://www.mulesoft.org/schema/mule/cors/2.1/mule-cors.xsd=META-INF/mule-cors.xsd
 http\://www.mulesoft.org/schema/mule/cors/current/mule-cors.xsd=META-INF/mule-cors.xsd
