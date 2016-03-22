@@ -7,13 +7,13 @@
       xmlns:http="http://www.mulesoft.org/schema/mule/http"
       xsi:schemaLocation="
         http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
-        http://www.mulesoft.org/schema/mule/cors http://www.mulesoft.org/schema/mule/cors/2.0-SNAPSHOT/mule-cors.xsd
+        http://www.mulesoft.org/schema/mule/cors http://www.mulesoft.org/schema/mule/cors/current/mule-cors.xsd
         http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
         http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd">
 
-    <http:listener-config name="http-listener-config" host="localhost"  port="9081"/>
+    <http:listener-config name="http-listener-config" host="localhost"  port="${http.port}"/>
 
-    <http:request-config name="http-request-config" host="localhost" port="9081"/>
+    <http:request-config name="http-request-config" host="localhost" port="${http.port}"/>
 
     <cors:config name="defaultConfig">
         <cors:origins>
@@ -51,6 +51,21 @@
         </cors:origins>
     </cors:config>
 
+    <cors:config name="headersConfig">
+        <cors:origins>
+            <cors:origin url="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_HEADERS_CONFIG_ORIGIN}">
+                <cors:methods>
+                    <cors:method>GET</cors:method>
+                    <cors:method>PUT</cors:method>
+                </cors:methods>
+                <cors:headers>
+                    <cors:header>Authorization</cors:header>
+                    <cors:header>id</cors:header>
+                </cors:headers>
+            </cors:origin>
+        </cors:origins>
+    </cors:config>
+
     <cors:config name="emptyConfig" storePrefix="emptyConfig" />
 
     <flow name="nonBlockingTestFlow">
@@ -77,9 +92,13 @@
     <flow name="nonBlockingHeadersFlow">
         <http:listener config-ref="http-listener-config" path="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_HEADERS_ENDPOINT_PATH}"/>
         <cors:validate publicResource="true" config-ref="defaultConfig" />
-        <copy-properties propertyName="*"/>
-        <http:request config-ref="http-request-config" method="GET"
-                path="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_PUBLIC_ENDPOINT_PATH}"/>
+        <set-payload value="#{T(com.mulesoft.modules.cors.CORSModuleTest).EXPECTED_RETURN}" />
+    </flow>
+
+    <flow name="nonBlockingRequestHeadersFlow">
+        <http:listener config-ref="http-listener-config" path="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_REQUEST_HEADERS_ENDPOINT_PATH}"/>
+        <cors:validate publicResource="false" config-ref="headersConfig" />
+        <set-payload value="#{T(com.mulesoft.modules.cors.CORSModuleTest).EXPECTED_RETURN}" />
     </flow>
 
     <flow name="emptyConfigFlow">
@@ -98,4 +117,5 @@
                 throw new IllegalArgumentException('bad arg')]]></scripting:script>
         </scripting:component>
     </flow>
+
 </mule>
