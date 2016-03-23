@@ -28,6 +28,7 @@ import org.mule.api.config.MuleProperties;
 import org.mule.config.spring.util.ProcessingStrategyUtils;
 import org.mule.module.http.api.HttpHeaders;
 import org.mule.tck.junit4.FunctionalTestCase;
+import org.mule.tck.junit4.rule.DynamicPort;
 import org.mule.tck.junit4.rule.SystemProperty;
 
 import java.util.Arrays;
@@ -51,55 +52,22 @@ public class CORSModuleTest extends FunctionalTestCase {
      */
     public static final String EXPECTED_RETURN = "Test String";
 
-    public static final String ENDPOINT_HOST = "localhost";
-
-    public static final String ENDPOINT_PORT = "9081";
-
-    private static final String ENDPOINT_URI = "http://" + ENDPOINT_HOST + ":" + ENDPOINT_PORT;
-
     public static final String CORS_CONFIGURED_ENDPOINT_PATH = "/test";
-
-    /**
-     * The endpoint that has a valid filter configuration
-     */
-    public static final String CORS_CONFIGURED_ENDPOINT_URL = ENDPOINT_URI + CORS_CONFIGURED_ENDPOINT_PATH;
 
     public static final String CORS_DEFAULT_ENDPOINT_PATH = "/default";
 
-    /**
-     * Endpoint to test default configuration.
-     */
-    public static final String CORS_DEFAULT_ENDPOINT_URL = ENDPOINT_URI + CORS_DEFAULT_ENDPOINT_PATH;
-
     public static final String CORS_PUBLIC_ENDPOINT_PATH = "/public";
-
-    /**
-     * An endpoint for a public resource
-     */
-    public static final String CORS_PUBLIC_ENDPOINT_URL = ENDPOINT_URI + CORS_PUBLIC_ENDPOINT_PATH;
 
     public static final String CORS_HEADERS_ENDPOINT_PATH = "/headers";
 
-    /**
-     * An endpoint to test response headers
-     */
-    public static final String CORS_HEADERS_ENDPOINT_URL = ENDPOINT_URI + CORS_HEADERS_ENDPOINT_PATH;
+    public static final String CORS_REQUEST_HEADERS_ENDPOINT_PATH = "/requestHeaders";
 
     public static final String CORS_PUBLIC_EMPTY_ENDPOINT_PATH = "/publicEmpty";
 
-    /**
-     * An endpoint for a public resource
-     */
-    public static final String CORS_PUBLIC_EMPTY_ENDPOINT_URL = ENDPOINT_URI + CORS_PUBLIC_EMPTY_ENDPOINT_PATH;
+    public static final String CORS_HEADERS_CONFIG_ORIGIN = "http://localhost:8081/headers";
 
-    /**
-     * The origin we have configured on the test case
-     */
     public static final String CORS_TEST_ORIGIN = "http://localhost:8081";
 
-    /**
-     * One origin not configured for the test case but to test default behavior.
-     */
     public static final String CORS_DEFAULT_ORIGIN = "http://somehost";
 
     /**
@@ -107,19 +75,23 @@ public class CORSModuleTest extends FunctionalTestCase {
      */
     public static final String CORS_EXCEPTION_ENDPOINT_PATH = "/exception";
 
-    public static final String CORS_EXCEPTION_ENDPOINT_URL = ENDPOINT_URI + CORS_EXCEPTION_ENDPOINT_PATH;
-
 
     @Rule
     public SystemProperty systemProperty;
+
+    @Rule
+    public DynamicPort httpPort = new DynamicPort("http.port");
+
 
     private String configFile;
 
     @Parameterized.Parameters
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][] {{"mule-config.xml", false},
+        return Arrays.asList(new Object[][] {
+                {"mule-config.xml", false},
                 {"listeners-mule-config.xml", true},
-                {"listeners-mule-config.xml", false}});
+                {"listeners-mule-config.xml", false}
+        });
     }
 
     public CORSModuleTest(String configFile, boolean nonBlocking) {
@@ -137,14 +109,14 @@ public class CORSModuleTest extends FunctionalTestCase {
 
     @Test
     public void testNoOriginMethod() throws Exception {
-        final Response response = Request.Get(CORS_CONFIGURED_ENDPOINT_URL).execute();
+        final Response response = Request.Get("http://localhost:" + httpPort.getValue() + CORS_CONFIGURED_ENDPOINT_PATH).execute();
         assertNotNull("The response should not be null", response);
         assertEquals("The response should be the expected value", EXPECTED_RETURN, response.returnContent().asString());
     }
 
     @Test
     public void testConfiguredOriginMethod() throws Exception {
-        final HttpResponse response = Request.Get(CORS_CONFIGURED_ENDPOINT_URL).addHeader("Origin", CORS_TEST_ORIGIN).execute().returnResponse();
+        final HttpResponse response = Request.Get("http://localhost:" + httpPort.getValue() + CORS_CONFIGURED_ENDPOINT_PATH).addHeader("Origin", CORS_TEST_ORIGIN).execute().returnResponse();
         assertNotNull("Response should not be null", response);
         assertNotNull("Allowed origin should be present", response.getFirstHeader(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN));
         assertThat(IOUtils.toString(response.getEntity().getContent()), equalTo(EXPECTED_RETURN));
@@ -152,7 +124,7 @@ public class CORSModuleTest extends FunctionalTestCase {
 
     @Test
     public void testMethodNotAllowed() throws Exception {
-        final HttpResponse response = Request.Post(CORS_CONFIGURED_ENDPOINT_URL).addHeader("Origin", CORS_TEST_ORIGIN).execute().returnResponse();
+        final HttpResponse response = Request.Post("http://localhost:" + httpPort.getValue() + CORS_CONFIGURED_ENDPOINT_PATH).addHeader("Origin", CORS_TEST_ORIGIN).execute().returnResponse();
         //a well behaved client should have sent a preflight
         //but we don't want to be well behaved
         assertNull("Allowed origin should NOT be present", response.getFirstHeader(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN));
@@ -163,7 +135,7 @@ public class CORSModuleTest extends FunctionalTestCase {
     @Test
     public void testPreflight() throws Exception {
         //test the preflight is working
-        final HttpResponse response = Request.Options(CORS_CONFIGURED_ENDPOINT_URL)
+        final HttpResponse response = Request.Options("http://localhost:" + httpPort.getValue() + CORS_CONFIGURED_ENDPOINT_PATH)
                 .addHeader("Origin", CORS_TEST_ORIGIN)
                 .addHeader(HttpHeaders.Names.ACCESS_CONTROL_REQUEST_METHOD, "GET")
                 .addHeader(HttpHeaders.Names.ACCESS_CONTROL_REQUEST_HEADERS, "X-Allow-Origin")
@@ -184,7 +156,7 @@ public class CORSModuleTest extends FunctionalTestCase {
         //configure any origin
         //some not allowed method
         //even without preflight we should be allowed to access the resource
-        final HttpResponse response = Request.Post(CORS_PUBLIC_ENDPOINT_URL).addHeader("Origin", "null").execute().returnResponse();
+        final HttpResponse response = Request.Post("http://localhost:" + httpPort.getValue() + CORS_PUBLIC_ENDPOINT_PATH).addHeader("Origin", "null").execute().returnResponse();
 
         assertNotNull("Response should not be null", response);
 
@@ -200,7 +172,7 @@ public class CORSModuleTest extends FunctionalTestCase {
     @Test
     public void testDefaultOriginMethod() throws Exception {
         //send a request to get (no preflight)
-        final HttpResponse response = Request.Get(CORS_DEFAULT_ENDPOINT_URL).addHeader("Origin", CORS_DEFAULT_ORIGIN).execute().returnResponse();
+        final HttpResponse response = Request.Get("http://localhost:" + httpPort.getValue() + CORS_DEFAULT_ENDPOINT_PATH).addHeader("Origin", CORS_DEFAULT_ORIGIN).execute().returnResponse();
 
         assertNotNull("Response should not be null", response);
 
@@ -214,7 +186,7 @@ public class CORSModuleTest extends FunctionalTestCase {
     public void testDefaultOriginMethodNotAllowed() throws Exception {
         //send a method not allowed and verify the module is filtering the request
         //send a request to get (no preflight)
-        final HttpResponse response = Request.Post(CORS_DEFAULT_ENDPOINT_URL).addHeader("Origin", CORS_DEFAULT_ORIGIN).execute().returnResponse();
+        final HttpResponse response = Request.Post("http://localhost:" + httpPort.getValue() + CORS_DEFAULT_ENDPOINT_PATH).addHeader("Origin", CORS_DEFAULT_ORIGIN).execute().returnResponse();
 
         //a well behaved client should have sent a preflight
         //but we don't want to be well behaved
@@ -227,17 +199,37 @@ public class CORSModuleTest extends FunctionalTestCase {
 
     @Test
     public void testResponseHeaders() throws Exception {
-        final HttpResponse response = Request.Post(CORS_HEADERS_ENDPOINT_URL).addHeader("Origin", CORS_DEFAULT_ORIGIN).execute().returnResponse();
+        final HttpResponse response = Request.Post("http://localhost:" + httpPort.getValue() + CORS_HEADERS_ENDPOINT_PATH).addHeader("Origin", CORS_DEFAULT_ORIGIN).execute().returnResponse();
         assertNull("header MULE_ROOT_MESSAGE_ID should not be present", response.getFirstHeader("MULE_ROOT_MESSAGE_ID"));
         assertNotNull("Allowed origin should be present", response.getFirstHeader(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN));
         assertThat(IOUtils.toString(response.getEntity().getContent()), equalTo(EXPECTED_RETURN));
+    }
+
+    @Test
+    public void testRequestHeaders() throws Exception {
+        final HttpResponse response = Request.Options("http://localhost:" + httpPort.getValue() + CORS_REQUEST_HEADERS_ENDPOINT_PATH)
+                .addHeader("Origin", CORS_HEADERS_CONFIG_ORIGIN)
+                .addHeader(HttpHeaders.Names.ACCESS_CONTROL_REQUEST_METHOD, "GET")
+                .addHeader(HttpHeaders.Names.ACCESS_CONTROL_REQUEST_HEADERS, "Authorization, id")
+                .execute().returnResponse();
+        assertNotNull("Allowed origin should be present", response.getFirstHeader(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN));
+    }
+
+    @Test
+    public void testInvalidRequestHeaders() throws Exception {
+        final HttpResponse response = Request.Options("http://localhost:" + httpPort.getValue() + CORS_REQUEST_HEADERS_ENDPOINT_PATH)
+                .addHeader("Origin", CORS_HEADERS_CONFIG_ORIGIN)
+                .addHeader(HttpHeaders.Names.ACCESS_CONTROL_REQUEST_METHOD, "GET")
+                .addHeader(HttpHeaders.Names.ACCESS_CONTROL_REQUEST_HEADERS, "Authorization, id, invalid")
+                .execute().returnResponse();
+        assertNull("Allowed origin should not be present", response.getFirstHeader(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN));
     }
 
 
     @Test
     public void testEmptyConfigPublicResource() throws Exception {
         //this is a valid scenario but it seems it produces some exceptions.
-        final HttpResponse response = Request.Options(CORS_PUBLIC_EMPTY_ENDPOINT_URL).addHeader("Origin", CORS_TEST_ORIGIN)
+        final HttpResponse response = Request.Options("http://localhost:" + httpPort.getValue() + CORS_PUBLIC_EMPTY_ENDPOINT_PATH).addHeader("Origin", CORS_TEST_ORIGIN)
                 .addHeader(HttpHeaders.Names.ACCESS_CONTROL_REQUEST_METHOD, "GET").execute().returnResponse();
 
         Header allowOrigin = response.getFirstHeader(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN);
@@ -249,7 +241,7 @@ public class CORSModuleTest extends FunctionalTestCase {
 
     @Test
     public void testInvalidPreflightAuthorRequestHeaders() throws Exception {
-        final HttpResponse response = Request.Options(CORS_CONFIGURED_ENDPOINT_URL)
+        final HttpResponse response = Request.Options("http://localhost:" + httpPort.getValue() + CORS_CONFIGURED_ENDPOINT_PATH)
                 .addHeader("Origin", CORS_TEST_ORIGIN)
                 .addHeader(HttpHeaders.Names.ACCESS_CONTROL_REQUEST_METHOD, "GET")
                 .addHeader(HttpHeaders.Names.ACCESS_CONTROL_REQUEST_HEADERS, "X-Allow-Origin, X-Invalid-Header")
@@ -261,7 +253,7 @@ public class CORSModuleTest extends FunctionalTestCase {
     @Test
     public void testExceptionThrown() throws Exception {
         //send a request to get (no preflight)
-        final HttpResponse response = Request.Get(CORS_EXCEPTION_ENDPOINT_URL).addHeader("Origin", CORS_DEFAULT_ORIGIN).execute().returnResponse();
+        final HttpResponse response = Request.Get("http://localhost:" + httpPort.getValue() + CORS_EXCEPTION_ENDPOINT_PATH).addHeader("Origin", CORS_DEFAULT_ORIGIN).execute().returnResponse();
 
         assertNotNull("Response should not be null", response);
 

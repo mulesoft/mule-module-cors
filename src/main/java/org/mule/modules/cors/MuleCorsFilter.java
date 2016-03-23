@@ -27,6 +27,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.util.List;
+
 public class MuleCorsFilter implements CorsFilter
 {
     protected transient Log logger = LogFactory.getLog(getClass());
@@ -178,20 +180,27 @@ public class MuleCorsFilter implements CorsFilter
 
     private boolean isSupportedRequestHeaders(final Origin origin, final String requestHeaders)
     {
+        List<String> supportedHeaders = origin.getHeaders();
         final String[] headers = parseMultipleHeaderValues(requestHeaders);
         for(String header : headers)
         {
-            for(String supportedHeader : origin.getHeaders())
+            if(!containsCaseInsensitive(header,supportedHeaders))
             {
-                if(!supportedHeader.equalsIgnoreCase(header))
-                {
-                    logger.debug("Unsupported HTTP request header: " + header);
-                    return false;
-                }
+                logger.debug("Unsupported HTTP request header: " + header);
+                return false;
             }
         }
 
         return true;
+    }
+
+    public boolean containsCaseInsensitive(String header, List<String> supportedHeaders){
+        for (String supportedHeader : supportedHeaders){
+            if (supportedHeader.equalsIgnoreCase(header)){
+                return true;
+            }
+        }
+        return false;
     }
 
     private void setAllowCredentials(final MuleMessage message)
