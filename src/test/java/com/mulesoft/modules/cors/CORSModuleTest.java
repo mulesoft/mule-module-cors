@@ -64,11 +64,15 @@ public class CORSModuleTest extends FunctionalTestCase {
 
     public static final String CORS_PUBLIC_EMPTY_ENDPOINT_PATH = "/publicEmpty";
 
+    public static final String CORS_DUMMY_ENDPOINT_PATH = "/dummy";
+
     public static final String CORS_HEADERS_CONFIG_ORIGIN = "http://localhost:8081/headers";
 
     public static final String CORS_TEST_ORIGIN = "http://localhost:8081";
 
     public static final String CORS_DEFAULT_ORIGIN = "http://somehost";
+
+    public static final String CORS_MAIN_FLOW_ENDPOINT_PATH = "/mainFlowException";
 
     /**
      * The endpoint to test Exceptions
@@ -261,4 +265,16 @@ public class CORSModuleTest extends FunctionalTestCase {
         assertNotNull("Allowed origin should be present", response.getFirstHeader(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN));
     }
 
+    @Test
+    public void testExceptionThrownInFlowRef() throws Exception {
+        //send a request to get (no preflight)
+        final HttpResponse response =
+                Request.Get("http://localhost:" + httpPort.getValue() + CORS_MAIN_FLOW_ENDPOINT_PATH)
+                        .addHeader("Origin", CORS_DEFAULT_ORIGIN).execute().returnResponse();
+
+        assertNotNull("Response should not be null", response);
+
+        //we should have an access control allow origin
+        assertNotNull("Allowed origin should be present", response.getFirstHeader(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN));
+    }
 }

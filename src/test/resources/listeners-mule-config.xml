@@ -108,6 +108,25 @@
         <set-payload value="#{T(com.mulesoft.modules.cors.CORSModuleTest).EXPECTED_RETURN}" />
     </flow>
 
+    <flow name="mainFlow">
+        <http:listener config-ref="http-listener-config"  path="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_MAIN_FLOW_ENDPOINT_PATH}" />
+        <cors:validate config-ref="withDefaultOrigin"/>
+        <flow-ref name="exceptionFlowRef"/>
+    </flow>
+
+    <flow name="internalFlow">
+        <http:listener config-ref="http-listener-config" path="/internal" />
+        <set-payload value="something"/>
+    </flow>
+
+    <flow name="exceptionFlowRef">
+        <!-- call dummy flow -->
+        <http:request config-ref="http-request-config" path="/internal" method="GET">
+            <!-- force failure -->
+            <http:success-status-code-validator values="400"/>
+        </http:request>
+    </flow>
+
     <flow name="nonBlockingExceptionConfigFlow">
         <http:listener config-ref="http-listener-config" path="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_EXCEPTION_ENDPOINT_PATH}"/>
         <cors:validate config-ref="withDefaultOrigin"/>

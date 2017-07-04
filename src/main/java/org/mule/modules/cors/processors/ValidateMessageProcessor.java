@@ -87,7 +87,7 @@ public class ValidateMessageProcessor extends AbstractRequestResponseMessageProc
     protected void processFinally(MuleEvent event, MessagingException exception, final String origin, final String method, final String requestMethod, final String requestHeaders)
     {
         super.processFinally(event, exception);
-        corsFilter.addHeaders(event, origin, method, requestMethod, requestHeaders);
+        corsFilter.addHeaders(exception == null ? event : exception.getEvent(), origin, method, requestMethod, requestHeaders);
     }
 
     protected MuleEvent processNonBlocking(MuleEvent event) throws MuleException {
@@ -159,8 +159,8 @@ public class ValidateMessageProcessor extends AbstractRequestResponseMessageProc
 
         @Override
         public void processExceptionReplyTo(MessagingException exception, Object replyTo) {
-            originalReplyToHandler.processExceptionReplyTo(exception, replyTo);
             processFinally(exception.getEvent(), exception, origin, method, requestMethod, requestHeaders);
+            originalReplyToHandler.processExceptionReplyTo(exception, replyTo);
         }
     }
 
