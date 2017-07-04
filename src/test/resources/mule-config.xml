@@ -109,6 +109,26 @@
         </scripting:component>
     </flow>
 
+    <flow name="mainFlow">
+        <http:inbound-endpoint host="localhost" port="${http.port}" path="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_MAIN_FLOW_ENDPOINT_PATH}" />
+        <cors:validate config-ref="withDefaultOrigin"/>
+        <flow-ref name="exceptionFlowRef"/>
+    </flow>
+
+    <flow name="internalFlow">
+        <http:inbound-endpoint host="localhost" port="${http.port}" path="/internal" />
+        <set-payload value="something"/>
+    </flow>
+
+    <http:request-config name="httpRequestConfig" host="localhost" port="${http.port}"/>
+    <flow name="exceptionFlowRef">
+        <!-- call dummy flow -->
+        <http:request config-ref="httpRequestConfig" path="/internal" method="GET">
+            <!-- force failure -->
+            <http:success-status-code-validator values="400"/>
+        </http:request>
+    </flow>
+
     <flow name="requestHeadersFlow">
         <http:inbound-endpoint host="localhost" port="${http.port}" path="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_REQUEST_HEADERS_ENDPOINT_PATH}"/>
         <cors:validate publicResource="false" config-ref="headersConfig" />
