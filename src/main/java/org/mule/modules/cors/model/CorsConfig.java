@@ -66,6 +66,21 @@ public class CorsConfig implements Initialisable, Stoppable, MuleContextAware
         }
     }
 
+    private String getObjectStoreName()
+    {
+        StringBuilder objectStoreName = new StringBuilder(muleContext.getConfiguration().getId());
+        objectStoreName.append(Constants.ORIGINS_OBJECT_STORE);
+        if(storePrefix != null)
+        {
+            objectStoreName.append(storePrefix);
+        }
+        else if(origins != null)
+        {
+            objectStoreName.append(String.valueOf(origins.hashCode()));
+        }
+        return objectStoreName.toString();
+    }
+
     @Override
     public void initialise() throws InitialisationException
     {
@@ -76,8 +91,7 @@ public class CorsConfig implements Initialisable, Stoppable, MuleContextAware
 
             //if (logger.isDebugEnabled()) logger.debug("No object store configured, defaulting to " + Constants.ORIGINS_OBJECT_STORE);
 
-            String appName = muleContext.getConfiguration().getId();
-            this.originsStore = muleContext.getObjectStoreManager().getObjectStore(appName + Constants.ORIGINS_OBJECT_STORE + storePrefix);
+            this.originsStore = muleContext.getObjectStoreManager().getObjectStore(getObjectStoreName());
             newObjectStore = true;
         }
 
