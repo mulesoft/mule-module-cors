@@ -64,8 +64,6 @@ public class CORSModuleTest extends FunctionalTestCase {
 
     public static final String CORS_PUBLIC_EMPTY_ENDPOINT_PATH = "/publicEmpty";
 
-    public static final String CORS_DUMMY_ENDPOINT_PATH = "/dummy";
-
     public static final String CORS_HEADERS_CONFIG_ORIGIN = "http://localhost:8081/headers";
 
     public static final String CORS_TEST_ORIGIN = "http://localhost:8081";
