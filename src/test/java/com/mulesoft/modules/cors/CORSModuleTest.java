@@ -60,6 +60,8 @@ public class CORSModuleTest extends FunctionalTestCase {
 
     public static final String CORS_HEADERS_ENDPOINT_PATH = "/headers";
 
+    public static final String CORS_EXPOSE_HEADERS_ENDPOINT_PATH = "/exposeHeaders";
+
     public static final String CORS_REQUEST_HEADERS_ENDPOINT_PATH = "/requestHeaders";
 
     public static final String CORS_PUBLIC_EMPTY_ENDPOINT_PATH = "/publicEmpty";
@@ -206,6 +208,19 @@ public class CORSModuleTest extends FunctionalTestCase {
         assertNotNull("Allowed origin should be present", response.getFirstHeader(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN));
         assertThat(IOUtils.toString(response.getEntity().getContent()), equalTo(EXPECTED_RETURN));
     }
+
+    @Test
+    public void exposeHeadersResponse() throws Exception {
+        final HttpResponse response = Request.Post("http://localhost:" + httpPort.getValue() + CORS_EXPOSE_HEADERS_ENDPOINT_PATH).addHeader("Origin", CORS_DEFAULT_ORIGIN).execute().returnResponse();
+        Header exposeHeaders = response.getFirstHeader(HttpHeaders.Names.ACCESS_CONTROL_EXPOSE_HEADERS);
+        assertNotNull("Access-Control-Expose-Headers should be present", exposeHeaders);
+        assertNotNull(exposeHeaders.getValue());
+        String [] values = exposeHeaders.getValue().split(",");
+        assertEquals(2, values.length);
+        assertThat(exposeHeaders.getValue(), containsString("ETag"));
+        assertThat(exposeHeaders.getValue(), containsString("X-Custom-Header"));
+    }
+
 
     @Test
     public void testRequestHeaders() throws Exception {

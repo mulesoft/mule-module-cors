@@ -66,6 +66,22 @@
         </cors:origins>
     </cors:config>
 
+    <cors:config name="exposeHeadersConfig">
+        <cors:origins>
+            <cors:origin url="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_DEFAULT_ORIGIN}">
+                <cors:methods>
+                    <cors:method>GET</cors:method>
+                    <cors:method>PUT</cors:method>
+                    <cors:method>POST</cors:method>
+                </cors:methods>
+                <cors:expose-headers>
+                    <cors:expose-header>ETag</cors:expose-header>
+                    <cors:expose-header>X-Custom-Header</cors:expose-header>
+                </cors:expose-headers>
+            </cors:origin>
+        </cors:origins>
+    </cors:config>
+
     <cors:config name="emptyConfig" storePrefix="emptyConfig" />
 
     <flow name="nonBlockingTestFlow">
@@ -92,6 +108,12 @@
     <flow name="nonBlockingHeadersFlow">
         <http:listener config-ref="http-listener-config" path="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_HEADERS_ENDPOINT_PATH}"/>
         <cors:validate publicResource="true" config-ref="defaultConfig" />
+        <set-payload value="#{T(com.mulesoft.modules.cors.CORSModuleTest).EXPECTED_RETURN}" />
+    </flow>
+
+    <flow name="exposeHeadersFlow">
+        <http:listener config-ref="http-listener-config" path="#{T(com.mulesoft.modules.cors.CORSModuleTest).CORS_EXPOSE_HEADERS_ENDPOINT_PATH}"/>
+        <cors:validate publicResource="false" config-ref="exposeHeadersConfig" />
         <set-payload value="#{T(com.mulesoft.modules.cors.CORSModuleTest).EXPECTED_RETURN}" />
     </flow>
 
