@@ -31,6 +31,8 @@ import java.util.List;
 
 public class MuleCorsFilter implements CorsFilter
 {
+
+    public static final String SEPARATOR = ", ";
     protected transient Log logger = LogFactory.getLog(getClass());
 
     private final CorsConfig config;
@@ -141,16 +143,17 @@ public class MuleCorsFilter implements CorsFilter
 
         if (!origin.getMethods().isEmpty())
         {
-            message.setOutboundProperty(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_METHODS, StringUtils.join(origin.getMethods(), ", "));
+            message.setOutboundProperty(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_METHODS, StringUtils.join(origin.getMethods(), SEPARATOR));
         }
         if (!origin.getHeaders().isEmpty())
         {
-            message.setOutboundProperty(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_HEADERS, StringUtils.join(origin.getHeaders(), ", "));
+            message.setOutboundProperty(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_HEADERS, StringUtils.join(origin.getHeaders(), SEPARATOR));
         }
         if (!origin.getExposeHeaders().isEmpty())
         {
-            message.setOutboundProperty(HttpHeaders.Names.ACCESS_CONTROL_EXPOSE_HEADERS, StringUtils.join(origin.getExposeHeaders(), ", "));
+            message.setOutboundProperty(HttpHeaders.Names.ACCESS_CONTROL_EXPOSE_HEADERS, StringUtils.join(origin.getExposeHeaders(), SEPARATOR));
         }
+
         if (origin.getAccessControlMaxAge() != null)
         {
             message.setOutboundProperty(HttpHeaders.Names.ACCESS_CONTROL_MAX_AGE, origin.getAccessControlMaxAge());
@@ -166,6 +169,10 @@ public class MuleCorsFilter implements CorsFilter
 
         message.setOutboundProperty(HttpHeaders.Names.ACCESS_CONTROL_ALLOW_ORIGIN, origin.getUrl());
         setAllowCredentials(message);
+        if (!origin.getExposeHeaders().isEmpty())
+        {
+            message.setOutboundProperty(HttpHeaders.Names.ACCESS_CONTROL_EXPOSE_HEADERS, StringUtils.join(origin.getExposeHeaders(), SEPARATOR));
+        }
     }
 
     private boolean isSupportedMethod(final Origin origin, final String method)
