@@ -35,7 +35,7 @@
         </expression-language>
     </configuration>
 
-    <flow name="nonBlockingFlow">
+    <flow name="nonBlockingFlow" processingStrategy="non-blocking">
         <test:assert-intercepting responseSameThread="false" responseExpression="#[assertPayload()]"/>
         <cors:validate publicResource="true" config-ref="defaultConfig" />
         <test:non-blocking-processor/>
