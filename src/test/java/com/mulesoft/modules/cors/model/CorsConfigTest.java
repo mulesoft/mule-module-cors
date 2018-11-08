@@ -1,9 +1,13 @@
 package com.mulesoft.modules.cors.model;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import org.mule.api.MuleContext;
+import org.mule.api.MuleException;
 import org.mule.api.config.MuleConfiguration;
+import org.mule.api.store.ObjectStore;
 import org.mule.api.store.ObjectStoreManager;
 import org.mule.module.http.api.HttpConstants;
 import org.mule.modules.cors.Constants;
@@ -68,4 +72,13 @@ public class CorsConfigTest
         Assert.assertEquals(APP_NAME + Constants.ORIGINS_OBJECT_STORE + PREFIX,objectStoreCaptor.getValue());
     }
 
+    @Test
+    public void stopTwice() throws MuleException
+    {
+        corsConfig.initialise();
+        corsConfig.stop();
+        corsConfig.stop();
+
+        verify(objectStoreManager,times(1)).disposeStore(any(ObjectStore.class));
+    }
 }
