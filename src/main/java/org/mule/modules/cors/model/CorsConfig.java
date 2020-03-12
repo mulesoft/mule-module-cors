@@ -17,11 +17,10 @@
 package org.mule.modules.cors.model;
 
 import org.mule.api.MuleContext;
-import org.mule.api.MuleException;
 import org.mule.api.context.MuleContextAware;
+import org.mule.api.lifecycle.Disposable;
 import org.mule.api.lifecycle.Initialisable;
 import org.mule.api.lifecycle.InitialisationException;
-import org.mule.api.lifecycle.Stoppable;
 import org.mule.api.store.ObjectStore;
 import org.mule.api.store.ObjectStoreException;
 import org.mule.modules.cors.Constants;
@@ -31,8 +30,9 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-public class CorsConfig implements Initialisable, Stoppable, MuleContextAware
+public class CorsConfig implements Initialisable, Disposable, MuleContextAware
 {
+
     protected transient Log logger = LogFactory.getLog(getClass());
 
     private String storePrefix;
@@ -59,7 +59,7 @@ public class CorsConfig implements Initialisable, Stoppable, MuleContextAware
 
             return getOriginsStore().retrieve(origin);
         }
-        catch(ObjectStoreException ose)
+        catch (ObjectStoreException ose)
         {
             logger.warn("Error searching origin " + origin + " in object store. Error: " + ose.getMessage());
             return null;
@@ -70,13 +70,13 @@ public class CorsConfig implements Initialisable, Stoppable, MuleContextAware
     {
         StringBuilder objectStoreName = new StringBuilder(muleContext.getConfiguration().getId());
         objectStoreName.append(Constants.ORIGINS_OBJECT_STORE);
-        if(storePrefix != null)
+        if (storePrefix != null)
         {
             objectStoreName.append(storePrefix);
         }
-        else if(origins != null)
+        else if (origins != null)
         {
-            objectStoreName.append(String.valueOf(origins.hashCode()));
+            objectStoreName.append(origins.hashCode());
         }
         return objectStoreName.toString();
     }
@@ -87,80 +87,94 @@ public class CorsConfig implements Initialisable, Stoppable, MuleContextAware
         boolean newObjectStore = false;
 
         //no object store configured.
-        if (this.originsStore == null) {
-
-            //if (logger.isDebugEnabled()) logger.debug("No object store configured, defaulting to " + Constants.ORIGINS_OBJECT_STORE);
-
+        if (this.originsStore == null)
+        {
             this.originsStore = muleContext.getObjectStoreManager().getObjectStore(getObjectStoreName());
             newObjectStore = true;
         }
 
         //setup all configured object stores.
-        if (this.origins == null) {
-            //if (logger.isDebugEnabled()) logger.debug("No initial set of origins configured.");
+        if (this.origins == null)
+        {
             return;
         }
 
-        try {
-            for(Origin o : origins) {
-
-                //if (logger.isDebugEnabled()) {
-                //    logger.debug("Configuring origin: " + o.getUrl());
-                //}
+        try
+        {
+            for (Origin o : origins)
+            {
 
                 if (originsStore.contains(o.getUrl()))
                 {
-                    if (newObjectStore) {
+                    if (newObjectStore)
+                    {
                         originsStore.remove(o.getUrl());
-                    } else {
-                        //logger.warn("Object Store already contains " + o.getUrl());
+                    }
+                    else
+                    {
                         continue;
                     }
                 }
                 originsStore.store(o.getUrl(), o);
             }
-        } catch(ObjectStoreException ose) {
+        }
+        catch (ObjectStoreException ose)
+        {
             throw new InitialisationException(ose, this);
         }
 
     }
 
     @Override
-    public void setMuleContext(MuleContext muleContext) {
-        this.muleContext = muleContext;
-    }
-
-    @Override
-    public void stop() throws MuleException
+    public void dispose()
     {
         if (this.originsStore != null)
         {
-            muleContext.getObjectStoreManager().disposeStore(this.originsStore);
+            try
+            {
+                muleContext.getObjectStoreManager().disposeStore(this.originsStore);
+            }
+            catch (ObjectStoreException e)
+            {
+                logger.warn("Unable to dispose Object Store. Error: {}" + e.getMessage());
+            }
             this.originsStore = null;
         }
     }
 
-    public String getStorePrefix() {
+    @Override
+    public void setMuleContext(MuleContext muleContext)
+    {
+        this.muleContext = muleContext;
+    }
+
+    public String getStorePrefix()
+    {
         return storePrefix;
     }
 
-    public void setStorePrefix(String storePrefix) {
+    public void setStorePrefix(String storePrefix)
+    {
         this.storePrefix = storePrefix;
     }
 
-    public List<Origin> getOrigins() {
+    public List<Origin> getOrigins()
+    {
         return origins;
     }
 
-    public void setOrigins(List<Origin> origins) {
+    public void setOrigins(List<Origin> origins)
+    {
         this.origins = origins;
     }
 
-    public ObjectStore<Origin> getOriginsStore() {
+    public ObjectStore<Origin> getOriginsStore()
+    {
         return originsStore;
     }
 
-    public void setOriginsStore(ObjectStore<Origin> originsStore) {
+    public void setOriginsStore(ObjectStore<Origin> originsStore)
+    {
         this.originsStore = originsStore;
     }
 }
