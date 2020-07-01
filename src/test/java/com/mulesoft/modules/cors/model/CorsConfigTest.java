@@ -5,21 +5,27 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import org.mule.api.MuleContext;
 import org.mule.api.MuleException;
 import org.mule.api.config.MuleConfiguration;
+import org.mule.api.lifecycle.InitialisationException;
 import org.mule.api.lifecycle.Startable;
 import org.mule.api.lifecycle.Stoppable;
+import org.mule.api.store.ObjectAlreadyExistsException;
 import org.mule.api.store.ObjectStore;
+import org.mule.api.store.ObjectStoreException;
 import org.mule.api.store.ObjectStoreManager;
 import org.mule.module.http.api.HttpConstants;
 import org.mule.modules.cors.Constants;
 import org.mule.modules.cors.model.CorsConfig;
 import org.mule.modules.cors.model.Origin;
 import org.mule.util.store.InMemoryObjectStore;
+
+import java.io.Serializable;
 
 import junit.framework.Assert;
 import org.hamcrest.Matchers;
@@ -58,6 +64,19 @@ public class CorsConfigTest
         origin.setUrl(DOMAIN);
         origin.setMethods(singletonList(GET_METHOD));
         corsConfig.setOrigins(singletonList(origin));
+    }
+
+    @Test
+    public void objectAlreadyInMemory() throws Exception
+    {
+        ObjectStore objectStore = Mockito.mock(InMemoryObjectStore.class);
+        doThrow(new ObjectAlreadyExistsException()).when(objectStore).store(any(Serializable.class), any(Origin.class));
+        Mockito.reset(objectStoreManager);
+        Mockito.when(objectStoreManager.getObjectStore(any(String.class))).thenReturn(objectStore);
+
+        corsConfig.initialise();
+
+        Mockito.verify(objectStore).store(any(Serializable.class), any(Origin.class));
     }
 
     @Test
