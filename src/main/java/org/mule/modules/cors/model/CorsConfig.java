@@ -22,6 +22,7 @@ import org.mule.api.context.MuleContextAware;
 import org.mule.api.lifecycle.Initialisable;
 import org.mule.api.lifecycle.InitialisationException;
 import org.mule.api.lifecycle.Stoppable;
+import org.mule.api.store.ObjectAlreadyExistsException;
 import org.mule.api.store.ObjectStore;
 import org.mule.api.store.ObjectStoreException;
 import org.mule.modules.cors.Constants;
@@ -89,26 +90,29 @@ public class CorsConfig implements Initialisable, Stoppable, MuleContextAware
 
         try {
             for(Origin o : origins) {
-
-                //if (logger.isDebugEnabled()) {
-                //    logger.debug("Configuring origin: " + o.getUrl());
-                //}
-
-                if (originsStore.contains(o.getUrl()))
-                {
+                if (originsStore.contains(o.getUrl())) {
                     if (newObjectStore) {
                         originsStore.remove(o.getUrl());
                     } else {
-                        //logger.warn("Object Store already contains " + o.getUrl());
                         continue;
                     }
                 }
-                originsStore.store(o.getUrl(), o);
+                safeStore(o);
             }
         } catch(ObjectStoreException ose) {
             throw new InitialisationException(ose, this);
         }
+    }
 
+    private void safeStore(Origin o) throws ObjectStoreException {
+        try
+        {
+            originsStore.store(o.getUrl(), o);
+        }
+        catch (ObjectAlreadyExistsException e)
+        {
+
+        }
     }
 
     @Override
