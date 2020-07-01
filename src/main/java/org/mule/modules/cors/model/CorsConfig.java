@@ -21,6 +21,7 @@ import org.mule.api.context.MuleContextAware;
 import org.mule.api.lifecycle.Disposable;
 import org.mule.api.lifecycle.Initialisable;
 import org.mule.api.lifecycle.InitialisationException;
+import org.mule.api.store.ObjectAlreadyExistsException;
 import org.mule.api.store.ObjectStore;
 import org.mule.api.store.ObjectStoreException;
 import org.mule.modules.cors.Constants;
@@ -115,7 +116,7 @@ public class CorsConfig implements Initialisable, Disposable, MuleContextAware
                         continue;
                     }
                 }
-                originsStore.store(o.getUrl(), o);
+                safeStore(o);
             }
         }
         catch (ObjectStoreException ose)
@@ -123,6 +124,17 @@ public class CorsConfig implements Initialisable, Disposable, MuleContextAware
             throw new InitialisationException(ose, this);
         }
 
+    }
+
+    private void safeStore(Origin o) throws ObjectStoreException {
+        try
+        {
+            originsStore.store(o.getUrl(), o);
+        }
+        catch (ObjectAlreadyExistsException e)
+        {
+
+        }
     }
 
     @Override
