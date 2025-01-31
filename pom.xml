@@ -14,7 +14,7 @@
         <mockito.version>1.8.2</mockito.version>
         <jdk.version>1.7</jdk.version>
         <hamcrest.version>1.3</hamcrest.version>
-        <httpcomponents.version>4.3.5</httpcomponents.version>
+        <httpcomponents.version>4.5.14</httpcomponents.version>
     </properties>
 
     <!-- Apache 2 License -->
